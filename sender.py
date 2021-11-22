@@ -31,7 +31,7 @@ class Sender:
 
         if not checkChecksum(msg):
             # TODO check
-            print("Zly packet")
+            print("Zly packet--")
 
         headerParams = translateHeader(msg[:HEADERSIZE])
         print(headerParams)

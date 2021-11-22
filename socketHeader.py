@@ -11,9 +11,9 @@ class SocketHeader:
         self.header = size + window + flag
         self.header += self.addChecksum(data)
 
+
     def addChecksum(self, data):
         ch = zlib.crc32(self.header+data)
-        y = ~ch
         y = ch.to_bytes(4, "big")
         return y
 

@@ -38,7 +38,7 @@ class Receiver:
             if headerParams[2] == 4:
                 if self.window > headerParams[1]:
                     self.window = headerParams[1]
-                self.send(b'', SocketHeader(0, self.window, 5, msg), address)
+                self.send(b'', SocketHeader(0, self.window, 5, b''), address)
                 return
             elif headerParams[2] == 1:
                 self.CONNECTED = True
