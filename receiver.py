@@ -4,10 +4,6 @@ import base64
 import time
 
 from socketHeader import *
-HEADERSIZE = 19
-
-
-
 
 class Receiver:
     def __init__(self, port, window):
@@ -16,6 +12,7 @@ class Receiver:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server.bind((self.myIP, self.myPORT))
         self.RUNNING = True
+        self.CONNECTED = False
         self.window = window
 
     def start(self):
@@ -24,23 +21,41 @@ class Receiver:
             print("+")
             msg, address = self.server.recvfrom(self.window)
             checkChecksum(msg)
-            self.handleTest(msg, address)
-            self.send(b'',SocketHeader(0, 1,2, b''), address)
+            self.handleMsg(msg, address)
+
             # thread = threading.Thread(target=handleTest, args=(connection, address))
             # thread.start()
         print("end")
 
-    def handleTest(self, msg, address):
-        # kontrola duplicity
+    def handleMsg(self, msg, address):
+        if not checkChecksum(msg):
+            print("TODO Sending NACK")  # TODO
+
+        headerParams = translateHeader(msg[:HEADERSIZE])
+        print(headerParams)
+        # spravovanie 3way handshake
+        if not self.CONNECTED:
+            if headerParams[2] == 4:
+                if self.window > headerParams[1]:
+                    self.window = headerParams[1]
+                self.send(b'', SocketHeader(0, self.window, 5, msg), address)
+                return
+            elif headerParams[2] == 1:
+                self.CONNECTED = True
+                return
+
+
+        # TODO kontrola duplicity
 
         print(f"Msg from {address}:")
         print(len(msg))
-        headerParams = translateHeader(msg[:HEADERSIZE])
-
-        if headerParams[0] == 0:
+        if headerParams[0] == HEADERSIZE: #tmp
+            print(headerParams)
             fw.close()
             return
         fw.write(msg[HEADERSIZE:])
+
+        self.send(b'', SocketHeader(0, self.window, 1, b''), address)
 
     def send(self, data, header, address):
         msg = header.header + data
@@ -51,22 +66,3 @@ class Receiver:
 fw = open("testOutput.png", "wb")
 
 
-def translateHeader(headerBits):
-    size = headerBits[:2]
-    fragNum = headerBits[2:18]
-    flag = headerBits[18:19]
-    return [size, fragNum, flag]
-
-def handleComm(msg, address):
-    pass
-
-def checkChecksum(data):
-    ch = data[15:19]
-    x = data[:15] + data[19:]
-    y = zlib.crc32(x)
-    a = int.from_bytes(ch, "big")
-    t = a^y
-    # print(y,a,t, "checking#####")
-    if t == 0:
-        return True
-    return False
