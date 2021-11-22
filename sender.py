@@ -1,7 +1,7 @@
 import socket
 from socketHeader import *
 
-BUFFSIZE  = 32000
+BUFFSIZE  = 3200
 # WINDOW = 2**16
 # PORT = 8888
 # IP = "192.168.1.11"
@@ -19,9 +19,11 @@ class Sender:
     # @param header: class socketHeader
     def send(self, data, header):
         msg = header.header + data
-        print(msg, len(msg))
-
+        # print(msg, len(msg))
         self.client.sendto(msg, (self.dstIP, self.dstPORT))
+
+    def startSendingFile(self, fragments):
+        self.send()
 
 # Rozdeli subor do bit casti podla velkosti fragmentu
 # @return colletion: list casti
