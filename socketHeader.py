@@ -2,9 +2,8 @@ FORMAT = 'utf-8'
 HEADERSIZE = 7
 import zlib
 
-# window je vlastne velkost fragmentu
-# format: | size 2B | window 3B | Flag 1B | Checksum 4B | Data...
-# TODO zmen format na | size 2B | Flag 1B | Checksum 4B | Data...
+
+# format na | size 2B | Flag 1B | Checksum 4B | Data...
 class SocketHeader:
     def __init__(self, dataSize, flag, data):
         size = (dataSize+HEADERSIZE).to_bytes(2, "big")

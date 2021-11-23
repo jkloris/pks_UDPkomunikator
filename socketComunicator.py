@@ -10,7 +10,7 @@ FORMAT = 'utf-8'
 FRAGSIZE = 2**10
 BUFFSIZE  = 1500 # - bla bla
 
-FILENAME = "../blbosti/pic2.png"
+FILENAME = "../blbosti/pic.png"
 
 
 if __name__ == "__main__":
@@ -24,18 +24,10 @@ if __name__ == "__main__":
 
     elif x == 2:
         a = Sender(dstIP, PORT)
-        a.start3WayHandshake()
-        print("*Spojenie vytvorené*")
+        a.loop(FILENAME, BUFFSIZE)
 
-        fragments = chunkFile(FILENAME, FRAGSIZE)
 
-        for i,frag in enumerate(fragments):
-            header = SocketHeader(len(frag), 1, frag)
-            a.send(frag, header)
-            # start timer
-            msg, address = a.client.recvfrom(BUFFSIZE)
-            if not checkChecksum(msg):
-                print("Chybny packet")
 
-            print(f"Msg from {address}:  {len(msg)}")
-        a.send(b'',SocketHeader(0, 8, b''))
+
+        while a.CONNECTED:
+            pass

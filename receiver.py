@@ -21,7 +21,6 @@ class Receiver:
         while self.RUNNING:
             print("+")
             msg, address = self.server.recvfrom(BUFFSIZE)
-            checkChecksum(msg)
             self.handleMsg(msg, address)
 
         print("end")
@@ -41,7 +40,10 @@ class Receiver:
                 self.CONNECTED = True
                 return
 
-
+        # zachyti refresh signal
+        if headerParams[1] == 16:
+            self.send(b'', SocketHeader(0, 17, b''), address)
+            return
         # TODO kontrola duplicity
 
         print(f"Msg from {address}:")
