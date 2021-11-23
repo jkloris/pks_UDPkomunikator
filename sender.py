@@ -1,17 +1,16 @@
 import socket
 from socketHeader import *
 
-# BUFFSIZE  = 1500
+BUFFSIZE  = 1500
 # WINDOW = 2**16
 # PORT = 8888
 # IP = "192.168.1.11"
 FORMAT = 'utf-8'
 
 class Sender:
-    def __init__(self, ip, port, window):
+    def __init__(self, ip, port):
         self.dstIP = ip
         self.dstPORT = port
-        self.window = window
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.client.connect((ip, port))
         self.CONNECTED = False
@@ -24,10 +23,10 @@ class Sender:
 
         self.client.sendto(msg, (self.dstIP, self.dstPORT))
 
-    def start3WayHandshake(self, window):
-        self.send(b'', SocketHeader(0, window, 4, b''))
+    def start3WayHandshake(self):
+        self.send(b'', SocketHeader(0, 4, b''))
         # TODO timer
-        msg, address = self.client.recvfrom(window)
+        msg, address = self.client.recvfrom(BUFFSIZE)
 
         if not checkChecksum(msg):
             # TODO check
@@ -35,9 +34,8 @@ class Sender:
 
         headerParams = translateHeader(msg[:HEADERSIZE])
         print(headerParams)
-        self.window = headerParams[1]
 
-        self.send(b'', SocketHeader(0, self.window, 1, b''))
+        self.send(b'', SocketHeader(0, 1, b''))
         self.CONNECTED = True
 
 

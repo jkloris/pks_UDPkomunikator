@@ -5,26 +5,25 @@ import time
 
 from socketHeader import *
 
+BUFFSIZE  = 1500
+
 class Receiver:
-    def __init__(self, port, window):
+    def __init__(self, port):
         self.myIP = socket.gethostbyname(socket.gethostname())
         self.myPORT = port
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server.bind((self.myIP, self.myPORT))
         self.RUNNING = True
         self.CONNECTED = False
-        self.window = window
 
     def start(self):
         print("Server is starting..")
         while self.RUNNING:
             print("+")
-            msg, address = self.server.recvfrom(self.window)
+            msg, address = self.server.recvfrom(BUFFSIZE)
             checkChecksum(msg)
             self.handleMsg(msg, address)
 
-            # thread = threading.Thread(target=handleTest, args=(connection, address))
-            # thread.start()
         print("end")
 
     def handleMsg(self, msg, address):
@@ -35,12 +34,10 @@ class Receiver:
         print(headerParams)
         # spravovanie 3way handshake
         if not self.CONNECTED:
-            if headerParams[2] == 4:
-                if self.window > headerParams[1]:
-                    self.window = headerParams[1]
-                self.send(b'', SocketHeader(0, self.window, 5, b''), address)
+            if headerParams[1] == 4:
+                self.send(b'', SocketHeader(0, 5, b''), address)
                 return
-            elif headerParams[2] == 1:
+            elif headerParams[1] == 1:
                 self.CONNECTED = True
                 return
 
@@ -55,7 +52,7 @@ class Receiver:
             return
         fw.write(msg[HEADERSIZE:])
 
-        self.send(b'', SocketHeader(0, self.window, 1, b''), address)
+        self.send(b'', SocketHeader(0, 1, b''), address)
 
     def send(self, data, header, address):
         msg = header.header + data
