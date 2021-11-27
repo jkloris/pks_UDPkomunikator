@@ -30,7 +30,7 @@ def restart(x, PORT):
         loopThread.start()
 
         while True:
-            print("1: Poslat subor\n2: Koniec\n3: Prehod funkcie")
+            print("1: Poslat subor\n2: Koniec(nop)\n3: Prehod funkcie")
             cmd = int(input())
 
             if cmd == 1:
@@ -39,14 +39,13 @@ def restart(x, PORT):
                 fileThread.join()
                 continue
             elif cmd == 2:
-
+                # nefunguje
                 ROLE.timers["refresh"].running = False
                 ROLE.timers["refresh"].thread.join()
                 print("_________________________________________..dsdsadsaô")
                 # TODO
                 break
             elif cmd == 3:
-                # NEFUNGUJE
                 ROLE.switchClients()
 
 
@@ -62,17 +61,16 @@ if __name__ == "__main__":
 
 def closeClientOpenServer(sender):
     port = sender.dstPORT
-    print(threading.enumerate())
+    # print(threading.enumerate())
     sender.closeAllTimers()
     sender.CONNECTED = False
     sender.timers["refresh"].thread.join()
     sender.timers["alive"].thread.join()
-    print(threading.enumerate())
+    # print(threading.enumerate())
 
     sender.client.close()
     print("___klient zavrety______")
     restart(1,port+1)
-    # ROLE = Receiver(port)
 
 def closeServerOpenClient(receiver):
     port = receiver.myPORT
@@ -82,4 +80,3 @@ def closeServerOpenClient(receiver):
     print("-----server zavrety------")
     time.sleep(5)
     restart(2,port+1)
-    # ROLE = Sender(IP,port)

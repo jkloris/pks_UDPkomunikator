@@ -30,10 +30,13 @@ class Receiver:
 
     def handleMsg(self, msg, address):
         if not checkChecksum(msg):
-            print("TODO Sending NACK")  # TODO
+            print(f"{msg} Error - Sending NACK")
+            self.send(b'', SocketHeader(0,2,b''), address)
+            return
+             #TODO
 
         headerParams = translateHeader(msg[:HEADERSIZE])
-        print(headerParams)
+        print(f"Msg from {address}: {headerParams}")
         # spravovanie 3way handshake
         if not self.CONNECTED:
             if headerParams[1] == 4:
@@ -58,15 +61,13 @@ class Receiver:
             closeServerOpenClient(self)
             pass
 
-        print(f"Msg from {address}:")
-        print(len(msg))
+
         if headerParams[1] == 1:
             if self.fw == None:
                 print(".....receiving file")
                 self.fw = open(str(self.TMPCOUNTER)+"testOutput.png", "wb")
 
             if headerParams[0] == HEADERSIZE:  # tmp
-                print(headerParams)
                 self.fw.close()
                 self.fw = None
                 self.TMPCOUNTER+=1
@@ -78,7 +79,6 @@ class Receiver:
     def send(self, data, header, address):
         msg = header.header + data
         # print(msg, len(msg))
-        print(address)
         self.server.sendto(msg, address)
 
 

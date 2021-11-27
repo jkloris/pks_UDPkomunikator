@@ -22,32 +22,38 @@ class Sender:
         }
         self.fragNum = None
         self.fragments = None
+        self.lastMsg = None
 
-    # posle spravu na server
-    # @param data: sprava v b'' tvare
-    # @param header: class socketHeader
+
 
     def closeAllTimers(self):
         self.timers["refresh"].kill()
         self.timers["alive"].kill()
 
 
-
+    # posle spravu na server
+    # @param data: sprava v b'' tvare
+    # @param header: class socketHeader
     def send(self, data, header):
         msg = header.header + data
 
-        self.client.sendto(msg, (self.dstIP, self.dstPORT))
-
+        try:
+            self.client.sendto(msg, (self.dstIP, self.dstPORT))
+        except:
+            return False
+        return True
 
     def startSendingFile(self, filename, fragsize):
         self.fragments = chunkFile(filename, fragsize)
+        self.lastMsg = self.fragments[0]
         self.send(self.fragments[0], SocketHeader(len(self.fragments[0]), 1, self.fragments[0]))
         self.fragNum=0
+
 
     def loop(self):
         while self.CONNECTED:
             msg, address = self.client.recvfrom(BUFFSIZE)
-            print(f"Msg from {address}:  {len(msg)}")
+            print(f"Msg from {address}:  {translateHeader(msg)}")
             self.handleMsg(msg, address)
 
 
@@ -70,6 +76,10 @@ class Sender:
             closeClientOpenServer(self)
             return
 
+        if headerParams[1] == 2:
+            self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, self.lastMsg))
+            return
+
         if headerParams[1] == 1 and self.fragments != None:
             self.fragNum+=1
             if len(self.fragments) == self.fragNum:
@@ -77,12 +87,20 @@ class Sender:
                 self.send(b'', SocketHeader(0, 1, b''))
                 return
             header = SocketHeader(len(self.fragments[self.fragNum]), 1, self.fragments[self.fragNum])
+            self.lastMsg = self.fragments[self.fragNum]
+            if self.fragNum == 2 :
+                self.send( createError(self.fragments[self.fragNum] + header.header),  header)
+                return
             self.send(self.fragments[self.fragNum], header)
 
 
+    def sendMsgAgain(self):
+        pass
 
     def start3WayHandshake(self):
-        self.send(b'', SocketHeader(0, 4, b''))
+        if not self.send(b'', SocketHeader(0, 4, b'')):
+            print("TWH ret false ")
+            return False
         # TODO timer
         msg, address = self.client.recvfrom(BUFFSIZE)
 
@@ -106,6 +124,10 @@ class Sender:
         self.send(b'', SocketHeader(0, 32, b''))
         #Todo timer
 
+
+    # def endConnection(self):
+    #     self.send(b'', SocketHeader(0, 64, b''))
+    #     #Todo timer
 
 
 

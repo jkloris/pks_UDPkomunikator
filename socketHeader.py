@@ -1,13 +1,14 @@
+import zlib
+import random
+
 FORMAT = 'utf-8'
 HEADERSIZE = 7
-import zlib
 #MAX_FRAGMENT_SIZE = 1500 - HEADER_SIZE - 20 - 8 #1500 (max data on Link layer) - my header - ip header (20B) - UDP header (8B)
 
 # format na | size 2B | Flag 1B | Checksum 4B | Data...
 class SocketHeader:
     def __init__(self, dataSize, flag, data):
         size = (dataSize+HEADERSIZE).to_bytes(2, "big")
-        # window = window.to_bytes(3, "big")
         flag = flag.to_bytes(1, "big")
         self.header = size + flag
         self.header += self.addChecksum(data)
@@ -21,7 +22,6 @@ class SocketHeader:
 
 def translateHeader(headerBits):
     size = int.from_bytes(headerBits[:2], "big")
-    # window = int.from_bytes(headerBits[2:5], "big")
     flag = int.from_bytes(headerBits[2:3], "big")
     return [size, flag]
 
@@ -37,3 +37,13 @@ def checkChecksum(data):
     if t == 0:
         return True
     return False
+
+def createError(msg):
+    data = msg[HEADERSIZE:]
+    size, flag = translateHeader(msg[:HEADERSIZE])
+    if size > 5:
+        r = random.randint(1, size-2)
+    else:
+        r = 1
+    data = data[:r-1] + b'00' + data[r:]
+    return data
