@@ -1,6 +1,7 @@
 import socket
 from socketHeader import *
 from timers import *
+
 BUFFSIZE  = 1500
 # WINDOW = 2**16
 # PORT = 8888
@@ -25,27 +26,30 @@ class Sender:
     # posle spravu na server
     # @param data: sprava v b'' tvare
     # @param header: class socketHeader
+
+    def closeAllTimers(self):
+        self.timers["refresh"].kill()
+        self.timers["alive"].kill()
+
+
+
     def send(self, data, header):
         msg = header.header + data
 
         self.client.sendto(msg, (self.dstIP, self.dstPORT))
 
-    def loop(self, FILENAME, FRAGSIZE):
-        self.start3WayHandshake()
-        print("*Spojenie vytvorené*")
-        self.timers["alive"] = TimerAlive(self)
-        self.timers["refresh"] = TimerRefresh(self)
-        self.timers["alive"].start()
-        self.timers["refresh"].start()
 
-        self.fragments = chunkFile(FILENAME, FRAGSIZE)
+    def startSendingFile(self, filename, fragsize):
+        self.fragments = chunkFile(filename, fragsize)
         self.send(self.fragments[0], SocketHeader(len(self.fragments[0]), 1, self.fragments[0]))
         self.fragNum=0
 
+    def loop(self):
         while self.CONNECTED:
             msg, address = self.client.recvfrom(BUFFSIZE)
             print(f"Msg from {address}:  {len(msg)}")
             self.handleMsg(msg, address)
+
 
     def handleMsg(self, msg, address):
         if not checkChecksum(msg):
@@ -56,27 +60,24 @@ class Sender:
 
         headerParams = translateHeader(msg[:HEADERSIZE])
         if headerParams[1] == 17:
-           self.timers["alive"].refreshTime()
+            self.timers["alive"].refreshTime()
+            return
+
+        if headerParams[1] == 33:
+            self.send(b'', SocketHeader(0, 33, b''))
+            print("---switch 33 odoslany-----")
+            from socketComunicator import closeClientOpenServer
+            closeClientOpenServer(self)
+            return
 
         if headerParams[1] == 1 and self.fragments != None:
             self.fragNum+=1
             if len(self.fragments) == self.fragNum:
                 self.fragments = None
-                self.send(b'', SocketHeader(0, 8, b''))
+                self.send(b'', SocketHeader(0, 1, b''))
                 return
             header = SocketHeader(len(self.fragments[self.fragNum]), 1, self.fragments[self.fragNum])
             self.send(self.fragments[self.fragNum], header)
-
-    # for i, frag in enumerate(fragments):
-    #     header = SocketHeader(len(frag), 1, frag)
-    #     a.send(frag, header)
-    #     # start timer
-    #     msg, address = a.client.recvfrom(BUFFSIZE)
-    #     if not checkChecksum(msg):
-    #         print("Chybny packet")
-    #
-    #     print(f"Msg from {address}:  {len(msg)}")
-    # a.send(b'', SocketHeader(0, 8, b''))
 
 
 
@@ -94,6 +95,17 @@ class Sender:
 
         self.send(b'', SocketHeader(0, 1, b''))
         self.CONNECTED = True
+
+        self.timers["alive"] = TimerAlive(self)
+        self.timers["refresh"] = TimerRefresh(self)
+        self.timers["alive"].start()
+        self.timers["refresh"].start()
+
+
+    def switchClients(self):
+        self.send(b'', SocketHeader(0, 32, b''))
+        #Todo timer
+
 
 
 

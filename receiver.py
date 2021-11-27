@@ -1,6 +1,5 @@
 import socket
 import threading
-import base64
 import time
 
 from socketHeader import *
@@ -15,6 +14,9 @@ class Receiver:
         self.server.bind((self.myIP, self.myPORT))
         self.RUNNING = True
         self.CONNECTED = False
+        self.fw = None
+
+        self.TMPCOUNTER = 1
 
     def start(self):
         print("Server is starting..")
@@ -24,6 +26,7 @@ class Receiver:
             self.handleMsg(msg, address)
 
         print("end")
+        self.server.close()
 
     def handleMsg(self, msg, address):
         if not checkChecksum(msg):
@@ -44,15 +47,31 @@ class Receiver:
         if headerParams[1] == 16:
             self.send(b'', SocketHeader(0, 17, b''), address)
             return
-        # TODO kontrola duplicity
+
+        if headerParams[1] == 32:
+
+            self.send(b'', SocketHeader(0, 33, b''), address)
+            return
+
+        if headerParams[1] == 33:
+            from socketComunicator import closeServerOpenClient
+            closeServerOpenClient(self)
+            pass
 
         print(f"Msg from {address}:")
         print(len(msg))
-        if headerParams[0] == HEADERSIZE: #tmp
-            print(headerParams)
-            fw.close()
-            return
-        fw.write(msg[HEADERSIZE:])
+        if headerParams[1] == 1:
+            if self.fw == None:
+                print(".....receiving file")
+                self.fw = open(str(self.TMPCOUNTER)+"testOutput.png", "wb")
+
+            if headerParams[0] == HEADERSIZE:  # tmp
+                print(headerParams)
+                self.fw.close()
+                self.fw = None
+                self.TMPCOUNTER+=1
+                return
+            self.fw.write(msg[HEADERSIZE:])
 
         self.send(b'', SocketHeader(0, 1, b''), address)
 
@@ -62,6 +81,7 @@ class Receiver:
         print(address)
         self.server.sendto(msg, address)
 
-fw = open("testOutput.png", "wb")
+
+
 
 

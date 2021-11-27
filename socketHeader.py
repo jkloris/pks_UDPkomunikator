@@ -1,7 +1,7 @@
 FORMAT = 'utf-8'
 HEADERSIZE = 7
 import zlib
-
+#MAX_FRAGMENT_SIZE = 1500 - HEADER_SIZE - 20 - 8 #1500 (max data on Link layer) - my header - ip header (20B) - UDP header (8B)
 
 # format na | size 2B | Flag 1B | Checksum 4B | Data...
 class SocketHeader:

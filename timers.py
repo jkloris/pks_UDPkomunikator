@@ -1,6 +1,7 @@
 import time
 import threading
 from socketHeader import *
+import sys
 
 class TimerTemp:
     def __init__(self, delay):
@@ -14,6 +15,11 @@ class TimerTemp:
     def action(self):
         pass
 
+    def kill(self):
+        self.running = False
+        # self.thread.exit()
+
+
     def loop(self):
         self.running = True
         while self.running:
@@ -24,7 +30,7 @@ class TimerTemp:
 class TimerRefresh(TimerTemp):
     def __init__(self, sender):
         self.sender = sender
-        self.delay = 10
+        self.delay = 5
         TimerTemp.__init__(self, self.delay)
 
     def action(self):
@@ -37,12 +43,12 @@ class TimerAlive(TimerTemp):
     def __init__(self, sender):
         self.sender = sender
         self.delay = 1
-        self.timeLeft = self.delay * 11
+        self.timeLeft = self.delay * 15
         TimerTemp.__init__(self, self.delay)
 
     def refreshTime(self):
-        self.timeLeft = self.delay * 11
-        print("refreshed")
+        self.timeLeft = self.delay * 15
+        # print("refreshed")
 
     def action(self):
         if self.timeLeft <= 0:
@@ -51,7 +57,7 @@ class TimerAlive(TimerTemp):
             print("disconnect")
             return
         self.timeLeft -= 1
-        print("*alive*")
+        # print("*alive*")
 
 
     # def loop(self):
