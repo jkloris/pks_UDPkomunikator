@@ -44,12 +44,14 @@ class Sender:
             return False
         return True
 
-    def startSendingFile(self, filename, fragsize):
-        self.fragments = chunkFile(filename, fragsize)
-        self.lastMsg = self.fragments[0]
-        self.send(self.fragments[0], SocketHeader(len(self.fragments[0]), 1, 0, self.fragments[0]))
+    def startSendingFile(self, filename, filepath, fragsize):
+        self.fragments = chunkFile(filepath, fragsize)
+        # self.lastMsg = self.fragments[0]
+        # self.send(self.fragments[0], SocketHeader(len(self.fragments[0]), 1, 0, self.fragments[0]))
+        self.lastMsg = chunkString(filename, fragsize)[0] #TODO chunks
+        self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, 0, self.lastMsg))
         self.timers["msg"] = TimerMsg( self)
-        self.fragNum=0
+        self.fragNum = 0
 
 
     def loop(self):
@@ -77,27 +79,37 @@ class Sender:
             from socketComunicator import closeClientOpenServer
             closeClientOpenServer(self)
             return
+        # FIN + ACK
+        if headerParams[1] == 5:
+            # TODO timer
+            return
 
+        # NACK
         if headerParams[1] == 2:
             self.sendMsgAgain(self.lastMsg)
             return
 
+        # ACK file
         if headerParams[1] == 1 and self.fragments != None:
             self.timers["msg"].kill() # Stop timer
 
-            self.fragNum+=1
+
             if len(self.fragments) == self.fragNum:
                 self.fragments = None
-                self.send(b'', SocketHeader(0, 1, self.fragNum, b''))
+                self.send(b'', SocketHeader(0, 4, self.fragNum, b''))
                 return
-            header = SocketHeader(len(self.fragments[self.fragNum]), 1, self.fragNum, self.fragments[self.fragNum])
+            header = SocketHeader(len(self.fragments[self.fragNum]), 1, self.fragNum+1, self.fragments[self.fragNum])
             self.lastMsg = self.fragments[self.fragNum]
-            if self.fragNum == 2 :
-                self.send( createError(self.fragments[self.fragNum] + header.header),  header)
-                self.timers["msg"] = TimerMsg( self)
-                return
+
+            #generovanie chyby
+            # if self.fragNum == 2 :
+            #     self.send( createError(self.fragments[self.fragNum] + header.header),  header)
+            #     self.timers["msg"] = TimerMsg( self)
+            #     return
+
             self.send(self.fragments[self.fragNum], header)
             self.timers["msg"] = TimerMsg( self)
+            self.fragNum += 1
 
 
     def sendMsgAgain(self, msg):
@@ -112,8 +124,8 @@ class Sender:
         try:
             msg, address = self.client.recvfrom(BUFFSIZE)
         except:
-            # print("TWH ret false ")
             return False
+
         print("ret True")
         headerParams = translateHeader(msg[:HEADERSIZE])
         print(headerParams)

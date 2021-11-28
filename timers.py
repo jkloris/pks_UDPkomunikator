@@ -61,7 +61,7 @@ class TimerAlive(TimerTemp):
 
 
 class TimerMsg(TimerTemp):
-    def __init__(self, sender, delay=0.001):
+    def __init__(self, sender, delay=0.1):
         self.sender = sender
         TimerTemp.__init__(self, delay)
         self.start()

@@ -4,14 +4,14 @@ from sender import *
 from receiver import *
 import time
 
-_PORT = 8888
-dstIP = "192.168.1.11"
+_PORT = 8880
+dstIP = "192.168.1.13"
 FORMAT = 'utf-8'
 FRAGSIZE = 2**10
 BUFFSIZE  = 1500 # - bla bla
 
-FILENAME = "../blbosti/pic2.png"
-
+FILENAME = "pic2.png"
+FILEPATH = "../blbosti/" + FILENAME
 ROLE = None
 
 
@@ -23,6 +23,7 @@ def restart(x, PORT):
 
     elif x == 2:
         ROLE = Sender(dstIP, PORT)
+        print("SSSSSSSSSSSSSSS")
         while not ROLE.start3WayHandshake():
             time.sleep(0.5)
         print("*Spojenie vytvorené*")
@@ -35,7 +36,7 @@ def restart(x, PORT):
             cmd = int(input())
 
             if cmd == 1:
-                fileThread = threading.Thread(target=ROLE.startSendingFile, args=(FILENAME, FRAGSIZE))
+                fileThread = threading.Thread(target=ROLE.startSendingFile, args=(FILENAME, FILEPATH, FRAGSIZE))
                 fileThread.start()
                 fileThread.join()
                 continue

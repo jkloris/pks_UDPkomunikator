@@ -5,6 +5,7 @@ import time
 from socketHeader import *
 
 BUFFSIZE  = 1500
+FORMAT = 'utf-8'
 
 class Receiver:
     def __init__(self, port):
@@ -16,7 +17,8 @@ class Receiver:
         self.CONNECTED = False
         self.fw = None
 
-        self.TMPCOUNTER = 1
+        self.lastFragN = None
+
 
     def start(self):
         print("Server is starting..")
@@ -42,6 +44,7 @@ class Receiver:
 
         # spravovanie 3way handshake
         if not self.CONNECTED:
+            print("3WH")
             if headerParams[1] == 4:
                 self.send(b'', SocketHeader(0, 5,headerParams[2], b''), address)
                 return
@@ -64,19 +67,28 @@ class Receiver:
             closeServerOpenClient(self)
             pass
 
+        if headerParams[1] == 4:
+            self.send(b'', SocketHeader(0, 5, headerParams[2], b''), address)
+            if self.fw.closed:
+                return
+            self.fw.close()
+            self.fw = None
+            return
 
         if headerParams[1] == 1:
             if self.fw == None:
                 print(".....receiving file")
-                self.fw = open(str(self.TMPCOUNTER)+"testOutput.png", "wb")
-
-            if headerParams[0] == HEADERSIZE:  # tmp
-                self.fw.close()
-                self.fw = None
-                self.TMPCOUNTER+=1
+                self.lastFragN = 0
+                name = msg[HEADERSIZE:].decode(FORMAT)
+                self.fw = open(name, "wb")
+                self.send(b'', SocketHeader(0, 1, 0, b''), address)
                 return
-            print(f"####{headerParams[2]}")
-            self.fw.write(msg[HEADERSIZE:])
+
+
+
+            if self.lastFragN != headerParams[2]:
+                self.fw.write(msg[HEADERSIZE:])
+                self.lastFragN = headerParams[2]
 
         self.send(b'', SocketHeader(0, 1,headerParams[2], b''), address)
 
