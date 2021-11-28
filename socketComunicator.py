@@ -23,7 +23,8 @@ def restart(x, PORT):
 
     elif x == 2:
         ROLE = Sender(dstIP, PORT)
-        ROLE.start3WayHandshake()
+        while not ROLE.start3WayHandshake():
+            time.sleep(0.5)
         print("*Spojenie vytvorené*")
         # ROLE.loop(FILENAME, BUFFSIZE)
         loopThread = threading.Thread(target=ROLE.loop)
@@ -76,7 +77,6 @@ def closeServerOpenClient(receiver):
     port = receiver.myPORT
     IP = dstIP
     receiver.RUNNING = False
-    print(threading.enumerate())
+    # print(threading.enumerate())
     print("-----server zavrety------")
-    time.sleep(5)
     restart(2,port+1)

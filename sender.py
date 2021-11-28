@@ -18,7 +18,8 @@ class Sender:
         self.CONNECTED = False
         self.timers = {
             "refresh" : None,
-            "alive" : None
+            "alive" : None,
+            "msg" : None
         }
         self.fragNum = None
         self.fragments = None
@@ -47,6 +48,7 @@ class Sender:
         self.fragments = chunkFile(filename, fragsize)
         self.lastMsg = self.fragments[0]
         self.send(self.fragments[0], SocketHeader(len(self.fragments[0]), 1, self.fragments[0]))
+        self.timers["msg"] = TimerMsg( self)
         self.fragNum=0
 
 
@@ -77,10 +79,12 @@ class Sender:
             return
 
         if headerParams[1] == 2:
-            self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, self.lastMsg))
+            self.sendMsgAgain(self.lastMsg)
             return
 
         if headerParams[1] == 1 and self.fragments != None:
+            self.timers["msg"].kill() # Stop timer
+
             self.fragNum+=1
             if len(self.fragments) == self.fragNum:
                 self.fragments = None
@@ -90,24 +94,27 @@ class Sender:
             self.lastMsg = self.fragments[self.fragNum]
             if self.fragNum == 2 :
                 self.send( createError(self.fragments[self.fragNum] + header.header),  header)
+                self.timers["msg"] = TimerMsg( self)
                 return
             self.send(self.fragments[self.fragNum], header)
+            self.timers["msg"] = TimerMsg( self)
 
 
-    def sendMsgAgain(self):
-        pass
+    def sendMsgAgain(self, msg):
+        self.send(msg, SocketHeader(len(msg), 1, msg))
+
 
     def start3WayHandshake(self):
         if not self.send(b'', SocketHeader(0, 4, b'')):
             print("TWH ret false ")
             return False
         # TODO timer
-        msg, address = self.client.recvfrom(BUFFSIZE)
-
-        if not checkChecksum(msg):
-            # TODO check
-            print("Zly packet--")
-
+        try:
+            msg, address = self.client.recvfrom(BUFFSIZE)
+        except:
+            # print("TWH ret false ")
+            return False
+        print("ret True")
         headerParams = translateHeader(msg[:HEADERSIZE])
         print(headerParams)
 
@@ -118,6 +125,7 @@ class Sender:
         self.timers["refresh"] = TimerRefresh(self)
         self.timers["alive"].start()
         self.timers["refresh"].start()
+        return True
 
 
     def switchClients(self):

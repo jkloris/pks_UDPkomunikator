@@ -60,10 +60,15 @@ class TimerAlive(TimerTemp):
         # print("*alive*")
 
 
-    # def loop(self):
-    #     while self.timeLeft > 0:
-    #         time.sleep(1000)
-    #
-    #     print("Close connection")
-    #     self.thread.join()
-    #     #TODO
+class TimerMsg(TimerTemp):
+    def __init__(self, sender, delay=0.000001):
+        self.sender = sender
+        TimerTemp.__init__(self, delay)
+        self.start()
+
+    def action(self):
+        print("TimerMsg action")
+        if self.running:
+            sender.sendMsgAgain(sender.lastMsg)
+            print("TimerMsg sending...")
+        self.kill()
