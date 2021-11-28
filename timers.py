@@ -61,14 +61,16 @@ class TimerAlive(TimerTemp):
 
 
 class TimerMsg(TimerTemp):
-    def __init__(self, sender, delay=0.1):
+    def __init__(self, sender, flag, msg, delay=0.1):
+        self.msg = msg
         self.sender = sender
+        self.flag = flag
         TimerTemp.__init__(self, delay)
         self.start()
 
     def action(self):
         print("TimerMsg action")
         if self.running:
-            self.sender.sendMsgAgain(self.sender.lastMsg)
+            self.sender.sendMsgAgain(self.msg, self.flag)
             print("TimerMsg sending...")
         self.kill()

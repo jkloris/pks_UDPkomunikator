@@ -50,7 +50,7 @@ class Sender:
         # self.send(self.fragments[0], SocketHeader(len(self.fragments[0]), 1, 0, self.fragments[0]))
         self.lastMsg = chunkString(filename, fragsize)[0] #TODO chunks
         self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, 0, self.lastMsg))
-        self.timers["msg"] = TimerMsg( self)
+        self.timers["msg"] = TimerMsg(self, 1, chunkString(filename, fragsize)[0])
         self.fragNum = 0
 
 
@@ -58,10 +58,11 @@ class Sender:
         while self.CONNECTED:
             msg, address = self.client.recvfrom(BUFFSIZE)
             print(f"Msg from {address}:  {translateHeader(msg)}")
-            self.handleMsg(msg, address)
+            self.handleMsg(msg)
 
-
-    def handleMsg(self, msg, address):
+    # spracovanie sprav
+    # msg je sprava
+    def handleMsg(self, msg):
         if not checkChecksum(msg):
             print("TODO Sending NACK")  # TODO
 
@@ -69,24 +70,28 @@ class Sender:
             return
 
         headerParams = translateHeader(msg[:HEADERSIZE])
+
+        # REFRESH + ACK
         if headerParams[1] == 17:
             self.timers["alive"].refreshTime()
             return
 
+        # SWITCH + ACK
         if headerParams[1] == 33:
             self.send(b'', SocketHeader(0, 33,0, b''))
             print("---switch 33 odoslany-----")
             from socketComunicator import closeClientOpenServer
             closeClientOpenServer(self)
             return
+
         # FIN + ACK
         if headerParams[1] == 5:
-            # TODO timer
+            self.timers["msg"].kill()
             return
 
         # NACK
         if headerParams[1] == 2:
-            self.sendMsgAgain(self.lastMsg)
+            self.sendMsgAgain(self.lastMsg, 1)
             return
 
         # ACK file
@@ -97,23 +102,25 @@ class Sender:
             if len(self.fragments) == self.fragNum:
                 self.fragments = None
                 self.send(b'', SocketHeader(0, 4, self.fragNum, b''))
+                self.timers["msg"] = TimerMsg(self, 4, b'')
                 return
             header = SocketHeader(len(self.fragments[self.fragNum]), 1, self.fragNum+1, self.fragments[self.fragNum])
             self.lastMsg = self.fragments[self.fragNum]
 
-            #generovanie chyby
+            # generovanie chyby
+            # NEMAZAT!!!
             # if self.fragNum == 2 :
             #     self.send( createError(self.fragments[self.fragNum] + header.header),  header)
-            #     self.timers["msg"] = TimerMsg( self)
+            #     self.timers["msg"] = TimerMsg(self, 1, self.fragments[self.fragNum])
             #     return
 
             self.send(self.fragments[self.fragNum], header)
-            self.timers["msg"] = TimerMsg( self)
+            self.timers["msg"] = TimerMsg(self, 1, self.fragments[self.fragNum])
             self.fragNum += 1
 
 
-    def sendMsgAgain(self, msg):
-        self.send(msg, SocketHeader(len(msg), 1, self.fragNum, msg))
+    def sendMsgAgain(self, msg, flag):
+        self.send(msg, SocketHeader(len(msg), flag, self.fragNum, msg))
 
 
     def start3WayHandshake(self):
