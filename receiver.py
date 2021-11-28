@@ -33,7 +33,7 @@ class Receiver:
         print(f"Msg from {address}: {headerParams}")
 
         if not checkChecksum(msg):
-            print(f"{msg} Error - Sending NACK")
+            print(f"Error - Sending NACK")
             self.send(b'', SocketHeader(0,2,headerParams[2], b''), address)
             return
              #TODO
@@ -75,6 +75,7 @@ class Receiver:
                 self.fw = None
                 self.TMPCOUNTER+=1
                 return
+            print(f"####{headerParams[2]}")
             self.fw.write(msg[HEADERSIZE:])
 
         self.send(b'', SocketHeader(0, 1,headerParams[2], b''), address)
