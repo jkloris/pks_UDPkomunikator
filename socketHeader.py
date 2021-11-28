@@ -2,15 +2,16 @@ import zlib
 import random
 
 FORMAT = 'utf-8'
-HEADERSIZE = 7
+HEADERSIZE = 11
 #MAX_FRAGMENT_SIZE = 1500 - HEADER_SIZE - 20 - 8 #1500 (max data on Link layer) - my header - ip header (20B) - UDP header (8B)
 
-# format na | size 2B | Flag 1B | Checksum 4B | Data...
+# format na | Size 3B | Flag 1B | Frag number 3B | Checksum 4B | Data...
 class SocketHeader:
-    def __init__(self, dataSize, flag, data):
-        size = (dataSize+HEADERSIZE).to_bytes(2, "big")
+    def __init__(self, dataSize, flag,fragN, data):
+        size = (dataSize+HEADERSIZE).to_bytes(3, "big")
         flag = flag.to_bytes(1, "big")
-        self.header = size + flag
+        fragN = fragN.to_bytes(3, "big")
+        self.header = size + flag + fragN
         self.header += self.addChecksum(data)
 
 
@@ -21,15 +22,16 @@ class SocketHeader:
 
 
 def translateHeader(headerBits):
-    size = int.from_bytes(headerBits[:2], "big")
-    flag = int.from_bytes(headerBits[2:3], "big")
-    return [size, flag]
+    size = int.from_bytes(headerBits[:3], "big")
+    flag = int.from_bytes(headerBits[3:4], "big")
+    fragN = int.from_bytes(headerBits[4:7], "big")
+    return [size, flag, fragN]
 
 
 
 def checkChecksum(data):
-    ch = data[3: HEADERSIZE]
-    x = data[:3] + data[HEADERSIZE: ]
+    ch = data[7: HEADERSIZE]
+    x = data[:7] + data[HEADERSIZE: ]
     y = zlib.crc32(x)
     a = int.from_bytes(ch, "big")
     t = a^y
@@ -40,7 +42,7 @@ def checkChecksum(data):
 
 def createError(msg):
     data = msg[HEADERSIZE:]
-    size, flag = translateHeader(msg[:HEADERSIZE])
+    size, flag, fragN = translateHeader(msg[:HEADERSIZE])
     if size > 5:
         r = random.randint(1, size-2)
     else:

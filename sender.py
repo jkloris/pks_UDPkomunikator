@@ -47,7 +47,7 @@ class Sender:
     def startSendingFile(self, filename, fragsize):
         self.fragments = chunkFile(filename, fragsize)
         self.lastMsg = self.fragments[0]
-        self.send(self.fragments[0], SocketHeader(len(self.fragments[0]), 1, self.fragments[0]))
+        self.send(self.fragments[0], SocketHeader(len(self.fragments[0]), 1, 0, self.fragments[0]))
         self.timers["msg"] = TimerMsg( self)
         self.fragNum=0
 
@@ -72,7 +72,7 @@ class Sender:
             return
 
         if headerParams[1] == 33:
-            self.send(b'', SocketHeader(0, 33, b''))
+            self.send(b'', SocketHeader(0, 33,0, b''))
             print("---switch 33 odoslany-----")
             from socketComunicator import closeClientOpenServer
             closeClientOpenServer(self)
@@ -88,9 +88,9 @@ class Sender:
             self.fragNum+=1
             if len(self.fragments) == self.fragNum:
                 self.fragments = None
-                self.send(b'', SocketHeader(0, 1, b''))
+                self.send(b'', SocketHeader(0, 1, self.fragNum, b''))
                 return
-            header = SocketHeader(len(self.fragments[self.fragNum]), 1, self.fragments[self.fragNum])
+            header = SocketHeader(len(self.fragments[self.fragNum]), 1, self.fragNum, self.fragments[self.fragNum])
             self.lastMsg = self.fragments[self.fragNum]
             if self.fragNum == 2 :
                 self.send( createError(self.fragments[self.fragNum] + header.header),  header)
@@ -101,11 +101,11 @@ class Sender:
 
 
     def sendMsgAgain(self, msg):
-        self.send(msg, SocketHeader(len(msg), 1, msg))
+        self.send(msg, SocketHeader(len(msg), 1, self.fragNum, msg))
 
 
     def start3WayHandshake(self):
-        if not self.send(b'', SocketHeader(0, 4, b'')):
+        if not self.send(b'', SocketHeader(0, 4,0, b'')):
             print("TWH ret false ")
             return False
         # TODO timer
@@ -118,7 +118,7 @@ class Sender:
         headerParams = translateHeader(msg[:HEADERSIZE])
         print(headerParams)
 
-        self.send(b'', SocketHeader(0, 1, b''))
+        self.send(b'', SocketHeader(0, 1,1, b''))
         self.CONNECTED = True
 
         self.timers["alive"] = TimerAlive(self)
@@ -129,7 +129,7 @@ class Sender:
 
 
     def switchClients(self):
-        self.send(b'', SocketHeader(0, 32, b''))
+        self.send(b'', SocketHeader(0, 32,0, b''))
         #Todo timer
 
 

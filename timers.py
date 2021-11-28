@@ -34,7 +34,7 @@ class TimerRefresh(TimerTemp):
         TimerTemp.__init__(self, self.delay)
 
     def action(self):
-        h = SocketHeader(0, 16, b'')
+        h = SocketHeader(0, 16, 1, b'')
         self.sender.send(b'', h)
 
 # Casovac, ktory odpocitava kolko casu este bude spojenie
@@ -61,7 +61,7 @@ class TimerAlive(TimerTemp):
 
 
 class TimerMsg(TimerTemp):
-    def __init__(self, sender, delay=0.000001):
+    def __init__(self, sender, delay=0.01):
         self.sender = sender
         TimerTemp.__init__(self, delay)
         self.start()
@@ -69,6 +69,6 @@ class TimerMsg(TimerTemp):
     def action(self):
         print("TimerMsg action")
         if self.running:
-            sender.sendMsgAgain(sender.lastMsg)
+            self.sender.sendMsgAgain(self.sender.lastMsg)
             print("TimerMsg sending...")
         self.kill()

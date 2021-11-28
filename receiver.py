@@ -29,18 +29,21 @@ class Receiver:
         self.server.close()
 
     def handleMsg(self, msg, address):
+        headerParams = translateHeader(msg[:HEADERSIZE])
+        print(f"Msg from {address}: {headerParams}")
+
         if not checkChecksum(msg):
             print(f"{msg} Error - Sending NACK")
-            self.send(b'', SocketHeader(0,2,b''), address)
+            self.send(b'', SocketHeader(0,2,headerParams[2], b''), address)
             return
              #TODO
 
-        headerParams = translateHeader(msg[:HEADERSIZE])
-        print(f"Msg from {address}: {headerParams}")
+
+
         # spravovanie 3way handshake
         if not self.CONNECTED:
             if headerParams[1] == 4:
-                self.send(b'', SocketHeader(0, 5, b''), address)
+                self.send(b'', SocketHeader(0, 5,headerParams[2], b''), address)
                 return
             elif headerParams[1] == 1:
                 self.CONNECTED = True
@@ -48,12 +51,12 @@ class Receiver:
 
         # zachyti refresh signal
         if headerParams[1] == 16:
-            self.send(b'', SocketHeader(0, 17, b''), address)
+            self.send(b'', SocketHeader(0, 17, headerParams[2], b''), address)
             return
 
         if headerParams[1] == 32:
 
-            self.send(b'', SocketHeader(0, 33, b''), address)
+            self.send(b'', SocketHeader(0, 33,headerParams[2], b''), address)
             return
 
         if headerParams[1] == 33:
@@ -74,7 +77,7 @@ class Receiver:
                 return
             self.fw.write(msg[HEADERSIZE:])
 
-        self.send(b'', SocketHeader(0, 1, b''), address)
+        self.send(b'', SocketHeader(0, 1,headerParams[2], b''), address)
 
     def send(self, data, header, address):
         msg = header.header + data
