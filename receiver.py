@@ -1,6 +1,7 @@
 import socket
 import threading
 import time
+import os
 
 from socketHeader import *
 
@@ -18,33 +19,32 @@ class Receiver:
         self.fw = None
 
         self.lastFragN = None
+        # self.storagePath = "C:\\Users\\Lenovo T470\\PycharmProjects\\learning\\PKS_Z2"
 
 
     def start(self):
-        print("Server is starting..")
+        print("[SERVER] Server is starting..")
         while self.RUNNING:
-            print("+")
+            # print("+")
             msg, address = self.server.recvfrom(BUFFSIZE)
             self.handleMsg(msg, address)
 
-        print("end")
+        print("[SERVER] End")
         self.server.close()
 
     def handleMsg(self, msg, address):
         headerParams = translateHeader(msg[:HEADERSIZE])
-        print(f"Msg from {address}: {headerParams}")
+        print(f"[SERVER] Msg from {address}:  [Size: {headerParams[0]}, Flag: {headerParams[1]}, Frag. num: {headerParams[2]}]")
 
         if not checkChecksum(msg):
-            print(f"Error - Sending NACK")
+            print(f"[ERROR] Chybny segment")
             self.send(b'', SocketHeader(0,2,headerParams[2], b''), address)
             return
-             #TODO
-
+        print(f"[SERVER] Bezchybny segment")
 
 
         # spravovanie 3way handshake
         if not self.CONNECTED:
-            print("3WH")
             if headerParams[1] == 4:
                 self.send(b'', SocketHeader(0, 5,headerParams[2], b''), address)
                 return
@@ -58,26 +58,38 @@ class Receiver:
             return
 
         if headerParams[1] == 32:
-
             self.send(b'', SocketHeader(0, 33,headerParams[2], b''), address)
             return
 
         if headerParams[1] == 33:
             from socketComunicator import closeServerOpenClient
             closeServerOpenClient(self)
-            pass
+            return
 
+        if headerParams[1] == 64:
+            self.send(b'', SocketHeader(0, 65, 1, b''), address)
+            return
+
+        if headerParams[1] == 65:
+            from socketComunicator import disconnectServer
+            disconnectServer(self)
+            return
+
+        # FIN
         if headerParams[1] == 4:
             self.send(b'', SocketHeader(0, 5, headerParams[2], b''), address)
-            if self.fw.closed:
+            if self.fw == None or self.fw.closed:
                 return
             self.fw.close()
+            print("[SERVER]: *Subor bol prijaty*")
+            print(f"    Absolutna adresa: {os.path.abspath(self.fw.name)}")
             self.fw = None
+
             return
 
         if headerParams[1] == 1:
             if self.fw == None:
-                print(".....receiving file")
+                print("[SERVER] Receiving file")
                 self.lastFragN = 0
                 name = msg[HEADERSIZE:].decode(FORMAT)
                 self.fw = open(name, "wb")

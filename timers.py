@@ -3,6 +3,7 @@ import threading
 from socketHeader import *
 import sys
 
+
 class TimerTemp:
     def __init__(self, delay):
         self.delay = delay
@@ -19,23 +20,24 @@ class TimerTemp:
         self.running = False
         # self.thread.exit()
 
-
     def loop(self):
         self.running = True
         while self.running:
             time.sleep(self.delay)
             self.action()
 
+
 # Casovac na refreshovanie spojenia (keep alive)
 class TimerRefresh(TimerTemp):
     def __init__(self, sender):
         self.sender = sender
-        self.delay = 5
+        self.delay = 7
         TimerTemp.__init__(self, self.delay)
 
     def action(self):
         h = SocketHeader(0, 16, 1, b'')
         self.sender.send(b'', h)
+
 
 # Casovac, ktory odpocitava kolko casu este bude spojenie
 class TimerAlive(TimerTemp):
@@ -54,7 +56,8 @@ class TimerAlive(TimerTemp):
         if self.timeLeft <= 0:
             self.running = False
             self.sender.CONNECTED = False
-            print("disconnect")
+            print("[TimerAlive]: *no time left*")
+            self.sender.endConnection()
             return
         self.timeLeft -= 1
         # print("*alive*")
@@ -69,8 +72,10 @@ class TimerMsg(TimerTemp):
         self.start()
 
     def action(self):
-        print("TimerMsg action")
+        # print("TimerMsg action")
         if self.running:
             self.sender.sendMsgAgain(self.msg, self.flag)
-            print("TimerMsg sending...")
+            # print("TimerMsg sending...")
         self.kill()
+
+

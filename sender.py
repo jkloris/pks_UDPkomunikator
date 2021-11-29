@@ -19,7 +19,8 @@ class Sender:
         self.timers = {
             "refresh" : None,
             "alive" : None,
-            "msg" : None
+            "msg" : None,
+            "switch" : None
         }
         self.fragNum = None
         self.fragments = None
@@ -46,9 +47,8 @@ class Sender:
 
     def startSendingFile(self, filename, filepath, fragsize):
         self.fragments = chunkFile(filepath, fragsize)
-        # self.lastMsg = self.fragments[0]
-        # self.send(self.fragments[0], SocketHeader(len(self.fragments[0]), 1, 0, self.fragments[0]))
         self.lastMsg = chunkString(filename, fragsize)[0] #TODO chunks
+
         self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, 0, self.lastMsg))
         self.timers["msg"] = TimerMsg(self, 1, chunkString(filename, fragsize)[0])
         self.fragNum = 0
@@ -57,19 +57,21 @@ class Sender:
     def loop(self):
         while self.CONNECTED:
             msg, address = self.client.recvfrom(BUFFSIZE)
-            print(f"Msg from {address}:  {translateHeader(msg)}")
-            self.handleMsg(msg)
+
+            self.handleMsg(msg, address)
 
     # spracovanie sprav
     # msg je sprava
-    def handleMsg(self, msg):
+    def handleMsg(self, msg, address):
+        headerParams = translateHeader(msg[:HEADERSIZE])
+        print(f"[Klient] Msg from {address}:  [Size: {headerParams[0]}, Flag: {headerParams[1]}, Frag. num: {headerParams[2]}]")
+
         if not checkChecksum(msg):
             print("TODO Sending NACK")  # TODO
 
         if not self.CONNECTED:
             return
 
-        headerParams = translateHeader(msg[:HEADERSIZE])
 
         # REFRESH + ACK
         if headerParams[1] == 17:
@@ -78,15 +80,24 @@ class Sender:
 
         # SWITCH + ACK
         if headerParams[1] == 33:
-            self.send(b'', SocketHeader(0, 33,0, b''))
-            print("---switch 33 odoslany-----")
+            # TODO zisti preco je NONE a otestovat
+            # self.timers["switch"].kill()
+            self.send(b'', SocketHeader(0, 33, 0, b''))
             from socketComunicator import closeClientOpenServer
             closeClientOpenServer(self)
             return
 
+        if headerParams[1] == 65:
+            # todo start timer
+            self.send(b'', SocketHeader(0, 65, 2, b''))
+            from socketComunicator import disconnectClient
+            disconnectClient(self)
+            return
+
         # FIN + ACK
         if headerParams[1] == 5:
-            self.timers["msg"].kill()
+            if self.timers["msg"]:
+                self.timers["msg"].kill()
             return
 
         # NACK
@@ -96,7 +107,8 @@ class Sender:
 
         # ACK file
         if headerParams[1] == 1 and self.fragments != None:
-            self.timers["msg"].kill() # Stop timer
+            if self.timers["msg"]:
+                self.timers["msg"].kill() # Stop timer
 
 
             if len(self.fragments) == self.fragNum:
@@ -125,19 +137,16 @@ class Sender:
 
     def start3WayHandshake(self):
         if not self.send(b'', SocketHeader(0, 4,0, b'')):
-            print("TWH ret false ")
             return False
-        # TODO timer
         try:
             msg, address = self.client.recvfrom(BUFFSIZE)
         except:
             return False
 
-        print("ret True")
         headerParams = translateHeader(msg[:HEADERSIZE])
-        print(headerParams)
+        # print(headerParams)
 
-        self.send(b'', SocketHeader(0, 1,1, b''))
+        self.send(b'', SocketHeader(0, 1, 1, b''))
         self.CONNECTED = True
 
         self.timers["alive"] = TimerAlive(self)
@@ -149,12 +158,13 @@ class Sender:
 
     def switchClients(self):
         self.send(b'', SocketHeader(0, 32,0, b''))
+        self.timers["switch"] = TimerMsg(self, 32, b'', 0.5)
+        # TODO este otestovat
+
+
+    def endConnection(self):
+        self.send(b'', SocketHeader(0, 64,0, b''))
         #Todo timer
-
-
-    # def endConnection(self):
-    #     self.send(b'', SocketHeader(0, 64, b''))
-    #     #Todo timer
 
 
 

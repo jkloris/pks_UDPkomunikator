@@ -7,9 +7,11 @@ HEADERSIZE = 11
 
 # format na | Size 3B | Flag 1B | Frag number 3B | Checksum 4B | Data...
 class SocketHeader:
-    def __init__(self, dataSize, flag,fragN, data):
+    def __init__(self, dataSize, flag, fragN, data):
         size = (dataSize+HEADERSIZE).to_bytes(3, "big")
         flag = flag.to_bytes(1, "big")
+        if fragN == None:
+            fragN = 0
         fragN = fragN.to_bytes(3, "big")
         self.header = size + flag + fragN
         self.header += self.addChecksum(data)
