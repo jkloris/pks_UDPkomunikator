@@ -35,7 +35,8 @@ class TimerRefresh(TimerTemp):
         TimerTemp.__init__(self, self.delay)
 
     def action(self):
-        h = SocketHeader(0, 16, 1, b'')
+        h = SocketHeader(0, 16, self.sender.msgNum, b'')
+        self.sender.msgNum+=1
         self.sender.send(b'', h)
 
 
@@ -55,7 +56,7 @@ class TimerAlive(TimerTemp):
     def action(self):
         if self.timeLeft <= 0:
             self.running = False
-            self.sender.CONNECTED = False
+            # self.sender.CONNECTED = False
             print("[TimerAlive]: *no time left*")
             self.sender.endConnection()
             return

@@ -29,7 +29,7 @@ def listFilesInDir(path):
 
     return os.listdir(path)[n]
 
-def restart(x, PORT):
+def restart(x):
 
     if x == 1:
         while True:
@@ -82,7 +82,7 @@ def restart(x, PORT):
         loopThread.start()
 
         while True:
-            print("[PRIKAZ]\n1: Poslat subor\n2: Koniec(nop)\n3: Prehod funkcie")
+            print("[PRIKAZ]\n1: Poslat subor\n2: Koniec\n3: Prehod funkcie")
             try:
                 cmd = int(input())
             except:
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     x = int(input())
 
     # temp .. testovanie
-    restart(x,_PORT)
+    restart(x)
 
 
 def closeClientOpenServer(sender):
@@ -144,7 +144,7 @@ def closeClientOpenServer(sender):
 
     sender.client.close()
     print("------Client closed-------")
-    restart(1,port+1)
+    restart(1)
 
 def closeServerOpenClient(receiver):
     port = receiver.myPORT
@@ -152,7 +152,7 @@ def closeServerOpenClient(receiver):
     # print(threading.enumerate())
     receiver.server.close()
     print("-----Server closed------")
-    restart(2,port+1)
+    restart(2)
 
 
 def disconnectClient(sender):
@@ -162,10 +162,12 @@ def disconnectClient(sender):
     sender.timers["alive"].thread.join()
     sender.client.close()
     print("-----Client disconnected------")
+    restart(2)
 
 def disconnectServer(receiver):
     receiver.RUNNING = False
     # print(threading.enumerate())
     receiver.server.close()
     print("-----Server disconnected------")
+    restart(1)
 

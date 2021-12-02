@@ -18,12 +18,14 @@ class Receiver:
         self.CONNECTED = False
         self.fw = None
 
+        self.msgNumStart = None
+        self.fileSize = 0
         self.lastFragN = None
         # self.storagePath = "C:\\Users\\Lenovo T470\\PycharmProjects\\learning\\PKS_Z2"
 
 
     def start(self):
-        print("[SERVER] Server is starting..")
+        print(f"[SERVER] Server is starting on [{self.myIP} ; {self.myPORT}]")
         while self.RUNNING:
             # print("+")
             msg, address = self.server.recvfrom(BUFFSIZE)
@@ -34,13 +36,9 @@ class Receiver:
 
     def handleMsg(self, msg, address):
         headerParams = translateHeader(msg[:HEADERSIZE])
-        print(f"[SERVER] Msg from {address}:  [Size: {headerParams[0]}, Flag: {headerParams[1]}, Frag. num: {headerParams[2]}]")
+        print(f"[SERVER] Msg from {address}:  [Segment Size: {headerParams[0]}B, Flag: {headerParams[1]}, Segment num: {headerParams[2]}]")
 
-        if not checkChecksum(msg):
-            print(f"[ERROR] Chybny segment")
-            self.send(b'', SocketHeader(0,2,headerParams[2], b''), address)
-            return
-        print(f"[SERVER] Bezchybny segment")
+
 
 
         # spravovanie 3way handshake
@@ -67,7 +65,7 @@ class Receiver:
             return
 
         if headerParams[1] == 64:
-            self.send(b'', SocketHeader(0, 65, 1, b''), address)
+            self.send(b'', SocketHeader(0, 65, headerParams[2], b''), address)
             return
 
         if headerParams[1] == 65:
@@ -83,19 +81,31 @@ class Receiver:
             self.fw.close()
             print("[SERVER]: *Subor bol prijaty*")
             print(f"    Absolutna adresa: {os.path.abspath(self.fw.name)}")
+            print(f"    Velkost suboru: {self.fileSize}B")
             self.fw = None
+            self.fileSize = 0
 
             return
 
         if headerParams[1] == 1:
+
+            if not checkChecksum(msg):
+                print(f"[ERROR] Chybny segment")
+                self.send(b'', SocketHeader(0, 2, headerParams[2], b''), address)
+                return
+            print(f"[SERVER] Bezchybny segment")
+
+            self.fileSize += headerParams[0] - HEADERSIZE
+
             if self.fw == None:
+                self.msgNumStart = headerParams[2]
                 print("[SERVER] Receiving file")
-                self.lastFragN = 0
+                self.lastFragN = headerParams[2]
                 name = msg[HEADERSIZE:].decode(FORMAT)
                 self.fw = open(name, "wb")
-                self.send(b'', SocketHeader(0, 1, 0, b''), address)
+                self.send(b'', SocketHeader(0, 1, headerParams[2], b''), address)
                 return
-
+            print(f"    Cislo fragmentu: {headerParams[2] - self.msgNumStart}, Velkost fragmentu: {headerParams[0] - HEADERSIZE}B")
 
 
             if self.lastFragN != headerParams[2]:

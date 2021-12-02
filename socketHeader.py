@@ -51,3 +51,10 @@ def createError(msg):
         r = 1
     data = data[:r-1] + b'00' + data[r:]
     return data
+
+#TODO
+# -timeout cez posielanie suboru nema bezat
+# -velkosť správ súboru
+# -všetky správy majú frag num
+# -fragmentácia aj mena súboru
+# -posielanie txt sprav
