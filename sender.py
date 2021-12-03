@@ -2,7 +2,7 @@ import socket
 from socketHeader import *
 from timers import *
 
-BUFFSIZE  = 1500
+BUFFSIZE  = 1472
 # WINDOW = 2**16
 # PORT = 8888
 # IP = "192.168.1.11"
@@ -64,6 +64,7 @@ class Sender:
 
         self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, self.msgNum, self.lastMsg))
         self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
+
         self.fragNum = 1
         self.msgNum+=1
 
@@ -114,6 +115,8 @@ class Sender:
         if headerParams[1] == 9:
             if self.timers["msg"]:
                 self.timers["msg"].kill()
+            self.timers["alive"].refreshTime()
+            self.timers["refresh"].unpause()
             return
 
         # NACK

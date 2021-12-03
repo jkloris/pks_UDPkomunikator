@@ -32,9 +32,18 @@ class TimerRefresh(TimerTemp):
     def __init__(self, sender):
         self.sender = sender
         self.delay = 7
+        self.paused = False
         TimerTemp.__init__(self, self.delay)
 
+    def pause(self):
+        self.paused = True
+
+    def unpause(self):
+        self.paused = False
+
     def action(self):
+        if self.paused:
+            return
         h = SocketHeader(0, 16, self.sender.msgNum, b'')
         self.sender.msgNum+=1
         self.sender.send(b'', h)
@@ -52,6 +61,9 @@ class TimerAlive(TimerTemp):
     def refreshTime(self):
         self.timeLeft = self.delay * 15
         # print("refreshed")
+
+    def pause(self):
+        self.timeLeft = self.delay * 1000
 
     def action(self):
         if self.timeLeft <= 0:
@@ -71,6 +83,7 @@ class TimerMsg(TimerTemp):
         self.flag = flag
         TimerTemp.__init__(self, delay)
         self.start()
+
 
     def action(self):
         # print("TimerMsg action")

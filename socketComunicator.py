@@ -11,7 +11,7 @@ _PORT = 8880
 # dstIP = "192.168.1.13"
 FORMAT = 'utf-8'
 FRAGSIZE = 2**10
-BUFFSIZE  = 1500 # - bla bla
+BUFFSIZE  = 1472
 
 FILENAME = "pic2.png"
 FILEPATH = "../blbosti/" + FILENAME
@@ -90,11 +90,14 @@ def restart(x):
                 cmd = -1
                 print("[ERROR]*Invalid Input*")
             if cmd == 0:
+                ROLE.timers["alive"].pause()
+                ROLE.timers["refresh"].pause()
+
                 while True:
-                    print(f"[PRIKAZ] Zadaj velkost fragmentu (1 - {BUFFSIZE-1})")
+                    print(f"[PRIKAZ] Zadaj velkost fragmentu (1 - {BUFFSIZE - 1 - HEADERSIZE})")
                     try:
                         fragsize = int(input())
-                        fragsize = fragsize if fragsize > 0 and fragsize < BUFFSIZE else BUFFSIZE - 1
+                        fragsize = fragsize if fragsize > 0 and fragsize < BUFFSIZE else BUFFSIZE - 1 - HEADERSIZE
                         break
                     except:
                         print("[ERROR] *Invalid Input*")
@@ -111,11 +114,14 @@ def restart(x):
                 continue
 
             elif cmd == 1:
+                ROLE.timers["alive"].pause()
+                ROLE.timers["refresh"].pause()
+
                 while True:
-                    print(f"[PRIKAZ] Zadaj velkost fragmentu (1 - {BUFFSIZE-1})")
+                    print(f"[PRIKAZ] Zadaj velkost fragmentu (1 - {BUFFSIZE - 1 - HEADERSIZE})")
                     try:
                         fragsize = int(input())
-                        fragsize = fragsize if fragsize > 0 and fragsize < BUFFSIZE else BUFFSIZE - 1
+                        fragsize = fragsize if fragsize > 0 and fragsize < BUFFSIZE else BUFFSIZE - 1 - HEADERSIZE
                         break
                     except:
                         print("[ERROR] *Invalid Input*")

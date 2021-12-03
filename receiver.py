@@ -5,7 +5,7 @@ import os
 
 from socketHeader import *
 
-BUFFSIZE  = 1500
+BUFFSIZE  = 1472
 FORMAT = 'utf-8'
 
 class Receiver:
