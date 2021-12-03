@@ -37,7 +37,6 @@ def checkChecksum(data):
     y = zlib.crc32(x)
     a = int.from_bytes(ch, "big")
     t = a^y
-    # print(y,a,t, "checking#####")
     if t == 0:
         return True
     return False
@@ -56,5 +55,6 @@ def createError(msg):
 # -timeout cez posielanie suboru nema bezat
 # -velkosť správ súboru, Ok
 # -všetky správy majú frag num, ok
-# -fragmentácia aj mena súboru
-# -posielanie txt sprav
+# -fragmentácia aj mena súboru, ok
+# -posielanie txt sprav, ok
+# -NACK vypisuje nespravne msg num

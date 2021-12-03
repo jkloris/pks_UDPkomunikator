@@ -17,6 +17,7 @@ class Receiver:
         self.RUNNING = True
         self.CONNECTED = False
         self.fw = None
+        self.fileName = ""
 
         self.msgNumStart = None
         self.fileSize = 0
@@ -74,8 +75,8 @@ class Receiver:
             return
 
         # FIN
-        if headerParams[1] == 4:
-            self.send(b'', SocketHeader(0, 5, headerParams[2], b''), address)
+        if headerParams[1] == 8:
+            self.send(b'', SocketHeader(0, 9, headerParams[2], b''), address)
             if self.fw == None or self.fw.closed:
                 return
             self.fw.close()
@@ -84,10 +85,16 @@ class Receiver:
             print(f"    Velkost suboru: {self.fileSize}B")
             self.fw = None
             self.fileSize = 0
+            self.msgNumStart = None
 
             return
 
+        if headerParams[1] == 128:
+            self.fw = open(self.fileName, "wb")
+            self.send(b'', SocketHeader(0, 129, headerParams[2], b''), address)
+
         if headerParams[1] == 1:
+            self.fileSize += headerParams[0] - HEADERSIZE
 
             if not checkChecksum(msg):
                 print(f"[ERROR] Chybny segment")
@@ -95,17 +102,22 @@ class Receiver:
                 return
             print(f"[SERVER] Bezchybny segment")
 
-            self.fileSize += headerParams[0] - HEADERSIZE
+
 
             if self.fw == None:
-                self.msgNumStart = headerParams[2]
-                print("[SERVER] Receiving file")
+                if self.msgNumStart == None:
+                    self.fileName = ""
+                    self.msgNumStart = headerParams[2]
+                    print("[SERVER] *Receiving file*")
+
                 self.lastFragN = headerParams[2]
-                name = msg[HEADERSIZE:].decode(FORMAT)
-                self.fw = open(name, "wb")
+
+                self.fileName+=msg[HEADERSIZE:].decode(FORMAT)
                 self.send(b'', SocketHeader(0, 1, headerParams[2], b''), address)
+            #     name = msg[HEADERSIZE:].decode(FORMAT)
+                print(f"    Cislo fragmentu: {headerParams[2] - self.msgNumStart}, Velkost fragmentu: {headerParams[0] - HEADERSIZE}B\n")
                 return
-            print(f"    Cislo fragmentu: {headerParams[2] - self.msgNumStart}, Velkost fragmentu: {headerParams[0] - HEADERSIZE}B")
+            print(f"    Cislo fragmentu: {headerParams[2] - self.msgNumStart}, Velkost fragmentu: {headerParams[0] - HEADERSIZE}B\n")
 
 
             if self.lastFragN != headerParams[2]:
@@ -116,7 +128,6 @@ class Receiver:
 
     def send(self, data, header, address):
         msg = header.header + data
-        # print(msg, len(msg))
         self.server.sendto(msg, address)
 
 

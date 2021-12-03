@@ -23,7 +23,11 @@ class Sender:
             "switch" : None
         }
         self.fragNum = None
-        self.fragments = None
+        self.fragments = {
+            "file" : None,
+            "name" : None,
+            "flag" : None
+        }
         self.lastMsg = None
         self.msgNum = 2
 
@@ -50,15 +54,17 @@ class Sender:
     # @param type: druh posielanej spravy; 1 = subor, 2 = string
     def startSendingFile(self, filename, filepath, fragsize, type):
         if type == 1:
-            self.fragments = chunkFile(filepath, fragsize)
+            self.fragments["file"] = chunkFile(filepath, fragsize)
         elif type == 2:
-            self.fragments = chunkString(filepath, fragsize)
+            self.fragments["file"] = chunkString(filepath, fragsize)
 
-        self.lastMsg = chunkString(filename, fragsize)[0] #TODO chunks
+        self.fragments["name"] = chunkString(filename, fragsize)
+        self.lastMsg = self.fragments["name"][0]
+        self.fragments["flag"] = "name"
 
         self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, self.msgNum, self.lastMsg))
-        self.timers["msg"] = TimerMsg(self, 1, chunkString(filename, fragsize)[0])
-        self.fragNum = 0
+        self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
+        self.fragNum = 1
         self.msgNum+=1
 
 
@@ -105,7 +111,7 @@ class Sender:
             return
 
         # FIN + ACK
-        if headerParams[1] == 5:
+        if headerParams[1] == 9:
             if self.timers["msg"]:
                 self.timers["msg"].kill()
             return
@@ -115,31 +121,47 @@ class Sender:
             self.sendMsgAgain(self.lastMsg, 1)
             return
 
+        # prijatie mena suboru + ACK
+        if headerParams[1] == 129:
+            self.fragments["name"] = None
+            self.fragments["flag"] = "file"
+            header = SocketHeader(len(self.fragments["file"][0]), 1, self.msgNum, self.fragments["file"][0])
+            self.msgNum+=1
+            self.send(self.fragments["file"][0], header)
+            self.fragNum = 1
+            return
+
         # ACK file
-        if headerParams[1] == 1 and self.fragments != None:
+        if headerParams[1] == 1 and self.fragments["file"] != None:
             if self.timers["msg"]:
                 self.timers["msg"].kill() # Stop timer
 
-
-            if len(self.fragments) == self.fragNum:
-                self.fragments = None
-                self.send(b'', SocketHeader(0, 4,  self.msgNum, b''))
-                self.msgNum+=1
-                self.timers["msg"] = TimerMsg(self, 4, b'')
+            if self.fragments["name"] != None and len(self.fragments["name"]) == self.fragNum:
+                self.send(b'', SocketHeader(0, 128, self.msgNum, b''))
+                self.msgNum += 1
+                self.timers["msg"] = TimerMsg(self, 128, b'')
                 return
-            header = SocketHeader(len(self.fragments[self.fragNum]), 1, self.msgNum, self.fragments[self.fragNum])
+
+            if self.fragments["name"] == None and len(self.fragments["file"]) == self.fragNum:
+                self.fragments["file"] = None
+                self.send(b'', SocketHeader(0, 8,  self.msgNum, b''))
+                self.msgNum+=1
+                self.timers["msg"] = TimerMsg(self, 8, b'')
+                return
+
+            header = SocketHeader(len(self.fragments[self.fragments["flag"]][self.fragNum]), 1, self.msgNum, self.fragments[self.fragments["flag"]][self.fragNum])
             self.msgNum+=1
-            self.lastMsg = self.fragments[self.fragNum]
+            self.lastMsg = self.fragments[self.fragments["flag"]][self.fragNum]
 
             # generovanie chyby
             # NEMAZAT!!!
             # if self.fragNum == 2 :
-            #     self.send( createError(self.fragments[self.fragNum] + header.header),  header)
-            #     self.timers["msg"] = TimerMsg(self, 1, self.fragments[self.fragNum])
+            #     self.send( createError(self.fragments[self.fragments["flag"]][self.fragNum] + header.header),  header)
+            #     self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
             #     return
 
-            self.send(self.fragments[self.fragNum], header)
-            self.timers["msg"] = TimerMsg(self, 1, self.fragments[self.fragNum])
+            self.send(self.fragments[self.fragments["flag"]][self.fragNum], header)
+            self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
             self.fragNum += 1
 
 
@@ -185,7 +207,7 @@ class Sender:
 # Rozdeli subor do bit casti podla velkosti fragmentu
 # @return colletion: list casti
 def chunkFile(file, buffsize):
-    buffsize -= HEADERSIZE
+    # buffsize -= HEADERSIZE
     with open(file, "rb") as f:
         collection = []
         while True:
@@ -198,7 +220,7 @@ def chunkFile(file, buffsize):
 # @return colletion: list casti
 def chunkString(string, buffsize):
     collection = []
-    buffsize -= HEADERSIZE
+    # buffsize -= HEADERSIZE
     for i in range(0, len(string), buffsize):
         collection.append(string[i:i+buffsize].encode(FORMAT))
     return collection
