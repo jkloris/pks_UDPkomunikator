@@ -52,9 +52,10 @@ def createError(msg):
     return data
 
 #TODO
-# -timeout cez posielanie suboru nema bezat
+# -timeout cez posielanie suboru nema bezat, ok
 # -velkosť správ súboru, Ok
 # -všetky správy majú frag num, ok
 # -fragmentácia aj mena súboru, ok
 # -posielanie txt sprav, ok
 # -NACK vypisuje nespravne msg num
+# -kontrola timerov sprav

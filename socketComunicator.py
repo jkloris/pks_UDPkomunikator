@@ -147,7 +147,7 @@ def restart(x):
             elif cmd == 3:
                 ROLE.switchClients()
                 break
-                # mozno tu dat break
+
 
 
 if __name__ == "__main__":

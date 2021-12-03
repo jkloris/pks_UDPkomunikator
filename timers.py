@@ -88,7 +88,8 @@ class TimerMsg(TimerTemp):
     def action(self):
         # print("TimerMsg action")
         if self.running:
-            self.sender.sendMsgAgain(self.msg, self.flag)
+            pass
+            # self.sender.sendMsgAgain(self.msg, self.flag, self.sender.msgNum)
             # print("TimerMsg sending...")
         self.kill()
 

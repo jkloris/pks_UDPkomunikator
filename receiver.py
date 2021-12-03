@@ -40,8 +40,6 @@ class Receiver:
         print(f"[SERVER] Msg from {address}:  [Segment Size: {headerParams[0]}B, Flag: {headerParams[1]}, Segment num: {headerParams[2]}]")
 
 
-
-
         # spravovanie 3way handshake
         if not self.CONNECTED:
             if headerParams[1] == 4:
@@ -92,6 +90,7 @@ class Receiver:
         if headerParams[1] == 128:
             self.fw = open(self.fileName, "wb")
             self.send(b'', SocketHeader(0, 129, headerParams[2], b''), address)
+            self.msgNumStart+=1
 
         if headerParams[1] == 1:
             self.fileSize += headerParams[0] - HEADERSIZE
@@ -113,8 +112,7 @@ class Receiver:
                 self.lastFragN = headerParams[2]
 
                 self.fileName+=msg[HEADERSIZE:].decode(FORMAT)
-                self.send(b'', SocketHeader(0, 1, headerParams[2], b''), address)
-            #     name = msg[HEADERSIZE:].decode(FORMAT)
+                self.send(b'a', SocketHeader(1, 1, headerParams[2], b'a'), address)
                 print(f"    Cislo fragmentu: {headerParams[2] - self.msgNumStart}, Velkost fragmentu: {headerParams[0] - HEADERSIZE}B\n")
                 return
             print(f"    Cislo fragmentu: {headerParams[2] - self.msgNumStart}, Velkost fragmentu: {headerParams[0] - HEADERSIZE}B\n")

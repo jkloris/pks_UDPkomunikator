@@ -121,7 +121,10 @@ class Sender:
 
         # NACK
         if headerParams[1] == 2:
-            self.sendMsgAgain(self.lastMsg, 1)
+            self.sendMsgAgain(self.lastMsg, 1, headerParams[2])
+
+            if self.timers["msg"]:
+                self.timers["msg"].kill()
             return
 
         # prijatie mena suboru + ACK
@@ -129,8 +132,8 @@ class Sender:
             self.fragments["name"] = None
             self.fragments["flag"] = "file"
             header = SocketHeader(len(self.fragments["file"][0]), 1, self.msgNum, self.fragments["file"][0])
-            self.msgNum+=1
             self.send(self.fragments["file"][0], header)
+            self.msgNum+=1
             self.fragNum = 1
             return
 
@@ -141,8 +144,8 @@ class Sender:
 
             if self.fragments["name"] != None and len(self.fragments["name"]) == self.fragNum:
                 self.send(b'', SocketHeader(0, 128, self.msgNum, b''))
-                self.msgNum += 1
                 self.timers["msg"] = TimerMsg(self, 128, b'')
+                self.msgNum += 1
                 return
 
             if self.fragments["name"] == None and len(self.fragments["file"]) == self.fragNum:
@@ -158,18 +161,21 @@ class Sender:
 
             # generovanie chyby
             # NEMAZAT!!!
-            # if self.fragNum == 2 :
-            #     self.send( createError(self.fragments[self.fragments["flag"]][self.fragNum] + header.header),  header)
-            #     self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
-            #     return
+            if self.fragNum == 5 :
+                self.send( createError(self.fragments[self.fragments["flag"]][self.fragNum] + header.header),  header)
+                # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
+                self.fragNum = headerParams[2]+1
+                return
 
             self.send(self.fragments[self.fragments["flag"]][self.fragNum], header)
             self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
-            self.fragNum += 1
+            self.fragNum = headerParams[2]+1
 
 
-    def sendMsgAgain(self, msg, flag):
-        self.send(msg, SocketHeader(len(msg), flag, self.fragNum, msg))
+    def sendMsgAgain(self, msg, flag, msgNum):
+        print(flag, msgNum)
+        self.send(msg, SocketHeader(len(msg), flag, msgNum, msg))
+        return
 
 
     def start3WayHandshake(self):
