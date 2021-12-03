@@ -46,8 +46,14 @@ class Sender:
             return False
         return True
 
-    def startSendingFile(self, filename, filepath, fragsize):
-        self.fragments = chunkFile(filepath, fragsize)
+    # @param filepath je cesta k suboru respektive string posielanej spravy. Zalezi od type
+    # @param type: druh posielanej spravy; 1 = subor, 2 = string
+    def startSendingFile(self, filename, filepath, fragsize, type):
+        if type == 1:
+            self.fragments = chunkFile(filepath, fragsize)
+        elif type == 2:
+            self.fragments = chunkString(filepath, fragsize)
+
         self.lastMsg = chunkString(filename, fragsize)[0] #TODO chunks
 
         self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, self.msgNum, self.lastMsg))

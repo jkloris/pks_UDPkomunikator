@@ -54,7 +54,7 @@ def createError(msg):
 
 #TODO
 # -timeout cez posielanie suboru nema bezat
-# -velkosť správ súboru
-# -všetky správy majú frag num
+# -velkosť správ súboru, Ok
+# -všetky správy majú frag num, ok
 # -fragmentácia aj mena súboru
 # -posielanie txt sprav

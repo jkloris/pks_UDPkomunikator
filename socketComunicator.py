@@ -5,6 +5,7 @@ from receiver import *
 import time
 import os.path
 from os import path
+import datetime
 
 _PORT = 8880
 # dstIP = "192.168.1.13"
@@ -82,14 +83,34 @@ def restart(x):
         loopThread.start()
 
         while True:
-            print("[PRIKAZ]\n1: Poslat subor\n2: Koniec\n3: Prehod funkcie")
+            print("[PRIKAZ]\n0: Poslat spravu\n1: Poslat subor\n2: Koniec\n3: Prehod funkcie")
             try:
                 cmd = int(input())
             except:
-                cmd = 0
+                cmd = -1
                 print("[ERROR]*Invalid Input*")
+            if cmd == 0:
+                while True:
+                    print(f"[PRIKAZ] Zadaj velkost fragmentu (1 - {BUFFSIZE-1})")
+                    try:
+                        fragsize = int(input())
+                        fragsize = fragsize if fragsize > 0 and fragsize < BUFFSIZE else BUFFSIZE - 1
+                        break
+                    except:
+                        print("[ERROR] *Invalid Input*")
 
-            if cmd == 1:
+                print(f"[PRIKAZ] Napis spravu, ktoru chces poslat")
+                message = input()
+
+                newname = datetime.datetime.now()
+                filename = "msg"+newname.strftime('%H-%M_%d.%m')+".txt"
+
+                fileThread = threading.Thread(target=ROLE.startSendingFile, args=(filename, message, fragsize, 2))
+                fileThread.start()
+                fileThread.join()
+                continue
+
+            elif cmd == 1:
                 while True:
                     print(f"[PRIKAZ] Zadaj velkost fragmentu (1 - {BUFFSIZE-1})")
                     try:
@@ -110,7 +131,7 @@ def restart(x):
                 filename = listFilesInDir(filepath)
                 filepath = filepath+"/"+filename
 
-                fileThread = threading.Thread(target=ROLE.startSendingFile, args=(filename, filepath, fragsize))
+                fileThread = threading.Thread(target=ROLE.startSendingFile, args=(filename, filepath, fragsize, 1))
                 fileThread.start()
                 fileThread.join()
                 continue
