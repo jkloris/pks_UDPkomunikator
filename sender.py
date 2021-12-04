@@ -161,19 +161,16 @@ class Sender:
 
             # generovanie chyby
             # NEMAZAT!!!
-            # if self.fragNum == 5 :
-            #     self.send( createError(self.fragments[self.fragments["flag"]][self.fragNum] + header.header),  header)
-            #     # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
-            #     # self.fragNum = headerParams[2]+1 ----
-            #     return
+            if self.fragNum == 5 :
+                self.send( createError(self.fragments[self.fragments["flag"]][self.fragNum] + header.header),  header)
+                self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
+                return
 
             self.send(self.fragments[self.fragments["flag"]][self.fragNum], header)
-            # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
-            # self.fragNum = headerParams[2]+1 ----
+            self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
 
 
     def sendMsgAgain(self, msg, flag, msgNum):
-        print(flag, msgNum)
         self.send(msg, SocketHeader(len(msg), flag, msgNum, msg))
         return
 

@@ -31,7 +31,7 @@ class TimerTemp:
 class TimerRefresh(TimerTemp):
     def __init__(self, sender):
         self.sender = sender
-        self.delay = 7
+        self.delay = 5
         self.paused = False
         TimerTemp.__init__(self, self.delay)
 
@@ -88,8 +88,7 @@ class TimerMsg(TimerTemp):
     def action(self):
         # print("TimerMsg action")
         if self.running:
-            pass
-            # self.sender.sendMsgAgain(self.msg, self.flag, self.sender.msgNum)
+            self.sender.sendMsgAgain(self.msg, self.flag, self.sender.msgNum)
             # print("TimerMsg sending...")
         self.kill()
 

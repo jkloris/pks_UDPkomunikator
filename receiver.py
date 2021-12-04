@@ -122,7 +122,7 @@ class Receiver:
                 self.fw.write(msg[HEADERSIZE:])
                 self.lastFragN = headerParams[2]
 
-        self.send(b'', SocketHeader(0, 1,headerParams[2], b''), address)
+            self.send(b'', SocketHeader(0, 1,headerParams[2], b''), address)
 
     def send(self, data, header, address):
         msg = header.header + data
