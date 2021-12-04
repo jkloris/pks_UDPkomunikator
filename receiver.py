@@ -112,7 +112,7 @@ class Receiver:
                 self.lastFragN = headerParams[2]
 
                 self.fileName+=msg[HEADERSIZE:].decode(FORMAT)
-                self.send(b'a', SocketHeader(1, 1, headerParams[2], b'a'), address)
+                self.send(b'', SocketHeader(0, 1, headerParams[2], b''), address)
                 print(f"    Cislo fragmentu: {headerParams[2] - self.msgNumStart}, Velkost fragmentu: {headerParams[0] - HEADERSIZE}B\n")
                 return
             print(f"    Cislo fragmentu: {headerParams[2] - self.msgNumStart}, Velkost fragmentu: {headerParams[0] - HEADERSIZE}B\n")

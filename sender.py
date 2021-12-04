@@ -22,7 +22,7 @@ class Sender:
             "msg" : None,
             "switch" : None
         }
-        self.fragNum = None
+        self.fragNum = 0
         self.fragments = {
             "file" : None,
             "name" : None,
@@ -65,7 +65,7 @@ class Sender:
         self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, self.msgNum, self.lastMsg))
         self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
 
-        self.fragNum = 1
+        self.fragNum = 0
         self.msgNum+=1
 
 
@@ -122,7 +122,6 @@ class Sender:
         # NACK
         if headerParams[1] == 2:
             self.sendMsgAgain(self.lastMsg, 1, headerParams[2])
-
             if self.timers["msg"]:
                 self.timers["msg"].kill()
             return
@@ -134,11 +133,12 @@ class Sender:
             header = SocketHeader(len(self.fragments["file"][0]), 1, self.msgNum, self.fragments["file"][0])
             self.send(self.fragments["file"][0], header)
             self.msgNum+=1
-            self.fragNum = 1
+            self.fragNum = 0
             return
 
         # ACK file
         if headerParams[1] == 1 and self.fragments["file"] != None:
+            self.fragNum += 1
             if self.timers["msg"]:
                 self.timers["msg"].kill() # Stop timer
 
@@ -161,15 +161,15 @@ class Sender:
 
             # generovanie chyby
             # NEMAZAT!!!
-            if self.fragNum == 5 :
-                self.send( createError(self.fragments[self.fragments["flag"]][self.fragNum] + header.header),  header)
-                # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
-                self.fragNum = headerParams[2]+1
-                return
+            # if self.fragNum == 5 :
+            #     self.send( createError(self.fragments[self.fragments["flag"]][self.fragNum] + header.header),  header)
+            #     # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
+            #     # self.fragNum = headerParams[2]+1 ----
+            #     return
 
             self.send(self.fragments[self.fragments["flag"]][self.fragNum], header)
-            self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
-            self.fragNum = headerParams[2]+1
+            # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
+            # self.fragNum = headerParams[2]+1 ----
 
 
     def sendMsgAgain(self, msg, flag, msgNum):
