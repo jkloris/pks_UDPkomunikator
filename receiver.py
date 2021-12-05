@@ -43,6 +43,7 @@ class Receiver:
         # spravovanie 3way handshake
         if not self.CONNECTED:
             if headerParams[1] == 4:
+                time.sleep(0.2) # na testovanie casovaca
                 self.send(b'', SocketHeader(0, 5,headerParams[2], b''), address)
                 return
             elif headerParams[1] == 1:

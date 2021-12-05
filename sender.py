@@ -63,7 +63,7 @@ class Sender:
         self.fragments["flag"] = "name"
 
         self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, self.msgNum, self.lastMsg))
-        self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
+        # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg, self.msgNum)
 
         self.fragNum = 0
         self.msgNum+=1
@@ -144,31 +144,31 @@ class Sender:
 
             if self.fragments["name"] != None and len(self.fragments["name"]) == self.fragNum:
                 self.send(b'', SocketHeader(0, 128, self.msgNum, b''))
-                self.timers["msg"] = TimerMsg(self, 128, b'')
+                # self.timers["msg"] = TimerMsg(self, 128, b'', self.msgNum)
                 self.msgNum += 1
                 return
 
             if self.fragments["name"] == None and len(self.fragments["file"]) == self.fragNum:
                 self.fragments["file"] = None
                 self.send(b'', SocketHeader(0, 8,  self.msgNum, b''))
+                # self.timers["msg"] = TimerMsg(self, 8, b'', self.msgNum)
                 self.msgNum+=1
-                self.timers["msg"] = TimerMsg(self, 8, b'')
                 return
 
             header = SocketHeader(len(self.fragments[self.fragments["flag"]][self.fragNum]), 1, self.msgNum, self.fragments[self.fragments["flag"]][self.fragNum])
-            self.msgNum+=1
             self.lastMsg = self.fragments[self.fragments["flag"]][self.fragNum]
 
             # generovanie chyby
             # NEMAZAT!!!
             if self.fragNum == 5 :
                 self.send( createError(self.fragments[self.fragments["flag"]][self.fragNum] + header.header),  header)
-                self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
+                # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg, self.msgNum)
+                self.msgNum += 1
                 return
 
             self.send(self.fragments[self.fragments["flag"]][self.fragNum], header)
-            self.timers["msg"] = TimerMsg(self, 1, self.lastMsg)
-
+            # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg, self.msgNum)
+            self.msgNum += 1
 
     def sendMsgAgain(self, msg, flag, msgNum):
         self.send(msg, SocketHeader(len(msg), flag, msgNum, msg))
@@ -178,10 +178,15 @@ class Sender:
     def start3WayHandshake(self):
         if not self.send(b'', SocketHeader(0, 4, 0, b'')):
             return False
+        self.timers["msg"] = TimerMsg(self, 4, b'', 0)
+
         try:
             msg, address = self.client.recvfrom(BUFFSIZE)
         except:
             return False
+        self.timers["msg"].kill()
+        self.timers["msg"].thread.join()
+        self.timers["msg"] = None
 
         headerParams = translateHeader(msg[:HEADERSIZE])
         print(f"[Klient] Msg from {address}:  [Segment Size: {headerParams[0]}B, Flag: {headerParams[1]}, Segment num: {headerParams[2]}]")
@@ -198,8 +203,8 @@ class Sender:
 
     def switchClients(self):
         self.send(b'', SocketHeader(0, 32,self.msgNum, b''))
+        # self.timers["switch"] = TimerMsg(self, 32, b'', 0.5, self.msgNum)
         self.msgNum+=1
-        self.timers["switch"] = TimerMsg(self, 32, b'', 0.5)
         # TODO este otestovat
 
 

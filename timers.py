@@ -77,10 +77,11 @@ class TimerAlive(TimerTemp):
 
 
 class TimerMsg(TimerTemp):
-    def __init__(self, sender, flag, msg, delay=0.1):
+    def __init__(self, sender, flag, msg, num, delay=0.1):
         self.msg = msg
+        self.num = int(num)
         self.sender = sender
-        self.flag = flag
+        self.flag = int(flag)
         TimerTemp.__init__(self, delay)
         self.start()
 
@@ -88,8 +89,8 @@ class TimerMsg(TimerTemp):
     def action(self):
         # print("TimerMsg action")
         if self.running:
-            self.sender.sendMsgAgain(self.msg, self.flag, self.sender.msgNum)
-            # print("TimerMsg sending...")
-        self.kill()
+            self.sender.sendMsgAgain(self.msg, self.flag, self.num)
+            print(f"TimerMsg sending...{self.num}-{self.flag}")
+        # self.kill()
 
 

@@ -57,5 +57,5 @@ def createError(msg):
 # -všetky správy majú frag num, ok
 # -fragmentácia aj mena súboru, ok
 # -posielanie txt sprav, ok
-# -NACK vypisuje nespravne msg num
-# -kontrola timerov sprav
+# -NACK vypisuje nespravne msg num, ok
+# -kontrola timerov sprav, nefunguje
