@@ -56,6 +56,7 @@ class Receiver:
             return
         # Switch
         if headerParams[1] == 32:
+            # time.sleep(2) # testing
             self.send(b'', SocketHeader(0, 33,headerParams[2], b''), address)
             return
 
@@ -66,6 +67,7 @@ class Receiver:
             return
 
         if headerParams[1] == 64:
+            # time.sleep(2) # testing
             self.send(b'', SocketHeader(0, 65, headerParams[2], b''), address)
             return
 

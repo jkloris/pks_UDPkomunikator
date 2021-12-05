@@ -20,7 +20,8 @@ class Sender:
             "refresh" : None,
             "alive" : None,
             "msg" : None,
-            "switch" : None
+            "switch" : None,
+            "end": None
         }
         self.fragNum = 0
         self.fragments = {
@@ -96,8 +97,6 @@ class Sender:
             # NACK
         if headerParams[1] == 2:
             self.sendMsgAgain(self.lastMsg, 1, headerParams[2])
-            # if self.timers["msg"]:
-            #     self.timers["msg"].kill()
             return
 
         # REFRESH + ACK
@@ -107,8 +106,9 @@ class Sender:
 
         # SWITCH + ACK
         if headerParams[1] == 33:
-            # TODO zisti preco je NONE a otestovat
-            # self.timers["switch"].kill()
+            if self.timers["switch"]:
+                self.timers["switch"].kill()
+                self.timers["switch"] = None
             self.send(b'', SocketHeader(0, 33, self.msgNum, b''))
             self.msgNum+=1
             from socketComunicator import closeClientOpenServer
@@ -116,7 +116,9 @@ class Sender:
             return
 
         if headerParams[1] == 65:
-            # todo start timer
+            if self.timers["end"]:
+                self.timers["end"].kill()
+                self.timers["end"] = None
             self.send(b'', SocketHeader(0, 65, self.msgNum, b''))
             self.msgNum+=1
             from socketComunicator import disconnectClient
@@ -216,13 +218,14 @@ class Sender:
 
     def switchClients(self):
         self.send(b'', SocketHeader(0, 32,self.msgNum, b''))
-        # self.timers["switch"] = TimerMsg(self, 32, b'', 0.5, self.msgNum)
+        self.timers["switch"] = TimerMsg(self, 32, b'', 0.5, self.msgNum)
         self.msgNum+=1
         # TODO este otestovat
 
 
     def endConnection(self):
         self.send(b'', SocketHeader(0, 64, self.msgNum, b''))
+        self.timers["end"] = TimerMsg(self, 64, b'', 0.5, self.msgNum)
         self.msgNum+=1
         #Todo timer
 

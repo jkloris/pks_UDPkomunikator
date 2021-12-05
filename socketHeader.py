@@ -58,4 +58,6 @@ def createError(msg):
 # -fragmentácia aj mena súboru, ok
 # -posielanie txt sprav, ok
 # -NACK vypisuje nespravne msg num, ok
-# -kontrola timerov sprav, nefunguje
+# -kontrola timerov sprav, ok
+# -timer switch a disonnect vypisuju segment num 0
+# -server moznost kam si ulozi subor
