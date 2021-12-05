@@ -16,13 +16,13 @@ class SocketHeader:
         self.header = size + flag + fragN
         self.header += self.addChecksum(data)
 
-
+    # vypocet chechsumu a pridanie do hlavicky
     def addChecksum(self, data):
         ch = zlib.crc32(self.header+data)
         y = ch.to_bytes(4, "big")
         return y
 
-
+# vrati inty jednotlivych info z hlavicky
 def translateHeader(headerBits):
     size = int.from_bytes(headerBits[:3], "big")
     flag = int.from_bytes(headerBits[3:4], "big")
@@ -30,7 +30,7 @@ def translateHeader(headerBits):
     return [size, flag, fragN]
 
 
-
+# kontrola checksumu
 def checkChecksum(data):
     ch = data[7: HEADERSIZE]
     x = data[:7] + data[HEADERSIZE: ]
@@ -41,6 +41,7 @@ def checkChecksum(data):
         return True
     return False
 
+# vytvorenie chyby c sprave
 def createError(msg):
     data = msg[HEADERSIZE:]
     size, flag, fragN = translateHeader(msg[:HEADERSIZE])
@@ -59,5 +60,5 @@ def createError(msg):
 # -posielanie txt sprav, ok
 # -NACK vypisuje nespravne msg num, ok
 # -kontrola timerov sprav, ok
-# -timer switch a disonnect vypisuju segment num 0
 # -server moznost kam si ulozi subor, ok
+# -timer switch a disonnect vypisuju segment num 0

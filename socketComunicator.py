@@ -7,16 +7,17 @@ import os.path
 from os import path
 import datetime
 
-_PORT = 8880
+# _PORT = 8880
 # dstIP = "192.168.1.13"
 FORMAT = 'utf-8'
-FRAGSIZE = 2**10
+# FRAGSIZE = 2**10
 BUFFSIZE  = 1472
 
-FILENAME = "pic2.png"
-FILEPATH = "../blbosti/" + FILENAME
+# FILENAME = "pic2.png"
+# FILEPATH = "../blbosti/" + FILENAME
 ROLE = None
 
+# vypise subory v priecinku @param path
 def listFilesInDir(path):
     print("Vyber cislo suboru, ktory chces poslat:")
     for i,f in enumerate(os.listdir(path)):
@@ -30,6 +31,8 @@ def listFilesInDir(path):
 
     return os.listdir(path)[n]
 
+# priebeh spojenia
+# sluzi aj ako UI
 def restart(x):
 
     if x == 1:
@@ -73,7 +76,6 @@ def restart(x):
             except:
                 print("[ERROR] *Invalid Port*")
 
-        # Kombinacia zla platny format IP bez servera dostane program do dokonecneho cakania
 
         ROLE = Sender(dstIP, port)
         counter = 0
@@ -164,32 +166,29 @@ if __name__ == "__main__":
     print("[PRIKAZ]\n1...server\n2...client")
     x = int(input())
 
-    # temp .. testovanie
     restart(x)
 
-
+# vymena roli zo strany klienta
 def closeClientOpenServer(sender):
     port = sender.dstPORT
-    # print(threading.enumerate())
     sender.closeAllTimers()
     sender.CONNECTED = False
     sender.timers["refresh"].thread.join()
     sender.timers["alive"].thread.join()
-    # print(threading.enumerate())
 
     sender.client.close()
     print("------Client closed-------")
     restart(1)
 
+# vymena roli zo strany servera
 def closeServerOpenClient(receiver):
     port = receiver.myPORT
     receiver.RUNNING = False
-    # print(threading.enumerate())
     receiver.server.close()
     print("-----Server closed------")
     restart(2)
 
-
+# odpoji klienta
 def disconnectClient(sender):
     sender.closeAllTimers()
     sender.CONNECTED = False
@@ -199,9 +198,9 @@ def disconnectClient(sender):
     print("-----Client disconnected------")
     restart(2)
 
+# odpoji server
 def disconnectServer(receiver):
     receiver.RUNNING = False
-    # print(threading.enumerate())
     receiver.server.close()
     print("-----Server disconnected------")
     restart(1)

@@ -3,7 +3,8 @@ import threading
 from socketHeader import *
 import sys
 
-
+# Template na casovac
+# @param delay : cas (s) po ktorych spusti funkciu action
 class TimerTemp:
     def __init__(self, delay):
         self.delay = delay
@@ -13,13 +14,15 @@ class TimerTemp:
     def start(self):
         self.thread.start()
 
+    # cinnosti, ktoru vykonava po uplynuti casu
     def action(self):
         pass
 
+    # prerusenia casovaca
     def kill(self):
         self.running = False
-        # self.thread.exit()
 
+    # slucka, ktora vola acion az, kym sa casovac nevypne
     def loop(self):
         self.running = True
         while self.running:
@@ -41,6 +44,7 @@ class TimerRefresh(TimerTemp):
     def unpause(self):
         self.paused = False
 
+    # posle refresh spravu
     def action(self):
         if self.paused:
             return
@@ -58,6 +62,7 @@ class TimerAlive(TimerTemp):
         self.timeLeft = self.delay * 15
         TimerTemp.__init__(self, self.delay)
 
+    # obnovi cas zostavajuceho spojenia
     def refreshTime(self):
         self.timeLeft = self.delay * 15
         # print("refreshed")
@@ -65,17 +70,22 @@ class TimerAlive(TimerTemp):
     def pause(self):
         self.timeLeft = self.delay * 1000
 
+    # vypne spojenie
     def action(self):
         if self.timeLeft <= 0:
             self.running = False
             # self.sender.CONNECTED = False
-            print("[TimerAlive]: *no time left*")
+            print("[TimerAlive] *no time left*")
             self.sender.endConnection()
             return
         self.timeLeft -= 1
         # print("*alive*")
 
-
+# casovac na znovuposielanie sprav
+# @param sender : odosielatel
+# @param flag : flag odosielanej spravy
+# @param msg : sprava
+# @param num : poradove cislo spravy
 class TimerMsg(TimerTemp):
     def __init__(self, sender, flag, msg, num, delay=0.1):
         self.msg = msg
@@ -85,12 +95,12 @@ class TimerMsg(TimerTemp):
         TimerTemp.__init__(self, delay)
         self.start()
 
-
+    # posle spravu
     def action(self):
         # print("TimerMsg action")
         if self.running:
             self.sender.sendMsgAgain(self.msg, self.flag, self.num)
-            print(f"TimerMsg sending...{self.num}-{self.flag}")
+            print(f"[TimerMsg] sending msg (num:{self.num}, flag:{self.flag})")
         # self.kill()
 
 

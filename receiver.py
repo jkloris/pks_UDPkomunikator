@@ -1,13 +1,16 @@
 import socket
-import threading
 import time
 import os
-
 from socketHeader import *
 
 BUFFSIZE  = 1472
 FORMAT = 'utf-8'
 
+# funcionalita servera
+# @param port : port servera
+# @poram storagePath : miesta, kam sa budu ukladat subory
+# lastFragN : cislo poslednej prijatej spravy
+# msgNumStart : pomocka na vypisovanie o kolkaty fragment ide
 class Receiver:
     def __init__(self, port, storagePath):
         self.myIP = socket.gethostbyname(socket.gethostname())
@@ -28,13 +31,13 @@ class Receiver:
     def start(self):
         print(f"[SERVER] Server is starting on [{self.myIP} ; {self.myPORT}]")
         while self.RUNNING:
-            # print("+")
             msg, address = self.server.recvfrom(BUFFSIZE)
             self.handleMsg(msg, address)
 
         print("[SERVER] End")
         self.server.close()
 
+    # spravovanie prijatych sprav
     def handleMsg(self, msg, address):
         headerParams = translateHeader(msg[:HEADERSIZE])
         print(f"[SERVER] Msg from {address}:  [Segment Size: {headerParams[0]}B, Flag: {headerParams[1]}, Segment num: {headerParams[2]}]")
@@ -54,6 +57,7 @@ class Receiver:
         if headerParams[1] == 16:
             self.send(b'', SocketHeader(0, 17, headerParams[2], b''), address)
             return
+
         # Switch
         if headerParams[1] == 32:
             # time.sleep(2) # testing
@@ -66,20 +70,23 @@ class Receiver:
             closeServerOpenClient(self)
             return
 
+        # Disconnect
         if headerParams[1] == 64:
             # time.sleep(2) # testing
             self.send(b'', SocketHeader(0, 65, headerParams[2], b''), address)
             return
 
+        # Disconnect + ACK
         if headerParams[1] == 65:
             from socketComunicator import disconnectServer
             disconnectServer(self)
             return
 
+        # Kontrola, ktora vyhodi uz prijate spravne segmenty
         if self.lastFragN >= headerParams[2]:
             return
 
-        # FIN
+        # FIN, uzavrie subor
         if headerParams[1] == 8:
             # time.sleep(0.2)  # test timera
             self.send(b'', SocketHeader(0, 9, headerParams[2], b''), address)
@@ -101,8 +108,8 @@ class Receiver:
             self.send(b'', SocketHeader(0, 129, headerParams[2], b''), address)
             self.msgNumStart+=1
 
+        # ACK, potvrdenie fragmentu
         if headerParams[1] == 1:
-            # time.sleep(0.2) #test timera
 
             self.fileSize += headerParams[0] - HEADERSIZE
 
@@ -113,14 +120,12 @@ class Receiver:
             print(f"[SERVER] Bezchybny segment")
 
 
-
-
+            # vytvaranie mena suboru
             if self.fw == None:
                 if self.msgNumStart == None:
                     self.fileName = ""
                     self.msgNumStart = headerParams[2]
                     print("[SERVER] *Receiving file*")
-
 
 
                 self.fileName+=msg[HEADERSIZE:].decode(FORMAT)
@@ -130,7 +135,7 @@ class Receiver:
                 return
             print(f"    Cislo fragmentu: {headerParams[2] - self.msgNumStart}, Velkost fragmentu: {headerParams[0] - HEADERSIZE}B\n")
 
-
+            # zapis fragmentov do suboru
             if self.lastFragN != headerParams[2]:
                 self.fw.write(msg[HEADERSIZE:])
                 self.lastFragN = headerParams[2]
@@ -138,6 +143,7 @@ class Receiver:
             self.lastFragN = headerParams[2]
             self.send(b'', SocketHeader(0, 1,headerParams[2], b''), address)
 
+    # poslanie spravy
     def send(self, data, header, address):
         msg = header.header + data
         self.server.sendto(msg, address)
