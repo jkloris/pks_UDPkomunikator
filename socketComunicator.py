@@ -41,7 +41,15 @@ def restart(x):
             except:
                 print("[ERROR] *Invalid Input*")
 
-        ROLE = Receiver(port)
+        while True:
+            print(f"[PRIKAZ] Zadaj priecinok ukladania suborov")
+            filepath = input()
+            if path.exists(filepath):
+                break
+            else:
+                print("[ERROR] *Invalid Input*")
+
+        ROLE = Receiver(port, filepath)
         ROLE.start()
 
     elif x == 2:

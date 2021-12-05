@@ -9,7 +9,7 @@ BUFFSIZE  = 1472
 FORMAT = 'utf-8'
 
 class Receiver:
-    def __init__(self, port):
+    def __init__(self, port, storagePath):
         self.myIP = socket.gethostbyname(socket.gethostname())
         self.myPORT = port
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -22,7 +22,7 @@ class Receiver:
         self.msgNumStart = None
         self.fileSize = 0
         self.lastFragN = 0
-        # self.storagePath = "C:\\Users\\Lenovo T470\\PycharmProjects\\learning\\PKS_Z2"
+        self.storagePath = storagePath
 
 
     def start(self):
@@ -97,12 +97,12 @@ class Receiver:
         # koniec pomenovania suboru
         if headerParams[1] == 128:
             # time.sleep(0.2)  # test timera
-            self.fw = open(self.fileName, "wb")
+            self.fw = open(self.storagePath + "\\" +self.fileName, "wb")
             self.send(b'', SocketHeader(0, 129, headerParams[2], b''), address)
             self.msgNumStart+=1
 
         if headerParams[1] == 1:
-            time.sleep(0.2) #test timera
+            # time.sleep(0.2) #test timera
 
             self.fileSize += headerParams[0] - HEADERSIZE
 

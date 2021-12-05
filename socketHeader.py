@@ -60,4 +60,4 @@ def createError(msg):
 # -NACK vypisuje nespravne msg num, ok
 # -kontrola timerov sprav, ok
 # -timer switch a disonnect vypisuju segment num 0
-# -server moznost kam si ulozi subor
+# -server moznost kam si ulozi subor, ok
