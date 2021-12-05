@@ -30,6 +30,7 @@ class Sender:
         }
         self.lastMsg = None
         self.msgNum = 2
+        self.lastAck = 0
 
 
 
@@ -63,7 +64,7 @@ class Sender:
         self.fragments["flag"] = "name"
 
         self.send(self.lastMsg, SocketHeader(len(self.lastMsg), 1, self.msgNum, self.lastMsg))
-        # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg, self.msgNum)
+        self.timers["msg"] = TimerMsg(self, 1, self.lastMsg, self.msgNum)
 
         self.fragNum = 0
         self.msgNum+=1
@@ -73,6 +74,10 @@ class Sender:
         while self.CONNECTED:
             msg, address = self.client.recvfrom(BUFFSIZE)
 
+            if self.timers["msg"]:
+                self.timers["msg"].kill()
+                self.timers["msg"] = None
+
             self.handleMsg(msg, address)
 
     # spracovanie sprav
@@ -81,12 +86,19 @@ class Sender:
         headerParams = translateHeader(msg[:HEADERSIZE])
         print(f"[Klient] Msg from {address}:  [Segment Size: {headerParams[0]}B, Flag: {headerParams[1]}, Segment num: {headerParams[2]}]")
 
+
         if not checkChecksum(msg):
             print("TODO Sending NACK")  # TODO
 
         if not self.CONNECTED:
             return
 
+            # NACK
+        if headerParams[1] == 2:
+            self.sendMsgAgain(self.lastMsg, 1, headerParams[2])
+            # if self.timers["msg"]:
+            #     self.timers["msg"].kill()
+            return
 
         # REFRESH + ACK
         if headerParams[1] == 17:
@@ -111,23 +123,23 @@ class Sender:
             disconnectClient(self)
             return
 
-        # FIN + ACK
-        if headerParams[1] == 9:
-            if self.timers["msg"]:
-                self.timers["msg"].kill()
-            self.timers["alive"].refreshTime()
-            self.timers["refresh"].unpause()
+        if self.lastAck >= headerParams[2]:
             return
 
-        # NACK
-        if headerParams[1] == 2:
-            self.sendMsgAgain(self.lastMsg, 1, headerParams[2])
-            if self.timers["msg"]:
-                self.timers["msg"].kill()
+        # FIN + ACK
+        if headerParams[1] == 9:
+            # if self.timers["msg"]:
+            #     self.timers["msg"].kill()
+            self.timers["alive"].refreshTime()
+            self.timers["refresh"].unpause()
+            self.lastAck = headerParams[2]
             return
+
+
 
         # prijatie mena suboru + ACK
         if headerParams[1] == 129:
+            self.lastAck = headerParams[2]
             self.fragments["name"] = None
             self.fragments["flag"] = "file"
             header = SocketHeader(len(self.fragments["file"][0]), 1, self.msgNum, self.fragments["file"][0])
@@ -138,20 +150,21 @@ class Sender:
 
         # ACK file
         if headerParams[1] == 1 and self.fragments["file"] != None:
+            self.lastAck = headerParams[2]
             self.fragNum += 1
-            if self.timers["msg"]:
-                self.timers["msg"].kill() # Stop timer
+            # if self.timers["msg"]:
+            #     self.timers["msg"].kill() # Stop timer
 
             if self.fragments["name"] != None and len(self.fragments["name"]) == self.fragNum:
                 self.send(b'', SocketHeader(0, 128, self.msgNum, b''))
-                # self.timers["msg"] = TimerMsg(self, 128, b'', self.msgNum)
+                self.timers["msg"] = TimerMsg(self, 128, b'', self.msgNum)
                 self.msgNum += 1
                 return
 
             if self.fragments["name"] == None and len(self.fragments["file"]) == self.fragNum:
                 self.fragments["file"] = None
                 self.send(b'', SocketHeader(0, 8,  self.msgNum, b''))
-                # self.timers["msg"] = TimerMsg(self, 8, b'', self.msgNum)
+                self.timers["msg"] = TimerMsg(self, 8, b'', self.msgNum)
                 self.msgNum+=1
                 return
 
@@ -167,7 +180,7 @@ class Sender:
                 return
 
             self.send(self.fragments[self.fragments["flag"]][self.fragNum], header)
-            # self.timers["msg"] = TimerMsg(self, 1, self.lastMsg, self.msgNum)
+            self.timers["msg"] = TimerMsg(self, 1, self.lastMsg, self.msgNum)
             self.msgNum += 1
 
     def sendMsgAgain(self, msg, flag, msgNum):

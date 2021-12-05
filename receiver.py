@@ -21,7 +21,7 @@ class Receiver:
 
         self.msgNumStart = None
         self.fileSize = 0
-        self.lastFragN = None
+        self.lastFragN = 0
         # self.storagePath = "C:\\Users\\Lenovo T470\\PycharmProjects\\learning\\PKS_Z2"
 
 
@@ -43,7 +43,7 @@ class Receiver:
         # spravovanie 3way handshake
         if not self.CONNECTED:
             if headerParams[1] == 4:
-                time.sleep(0.2) # na testovanie casovaca
+                # time.sleep(0.2) # na testovanie casovaca
                 self.send(b'', SocketHeader(0, 5,headerParams[2], b''), address)
                 return
             elif headerParams[1] == 1:
@@ -54,11 +54,12 @@ class Receiver:
         if headerParams[1] == 16:
             self.send(b'', SocketHeader(0, 17, headerParams[2], b''), address)
             return
-
+        # Switch
         if headerParams[1] == 32:
             self.send(b'', SocketHeader(0, 33,headerParams[2], b''), address)
             return
 
+        # Switch + ACK
         if headerParams[1] == 33:
             from socketComunicator import closeServerOpenClient
             closeServerOpenClient(self)
@@ -73,8 +74,12 @@ class Receiver:
             disconnectServer(self)
             return
 
+        if self.lastFragN >= headerParams[2]:
+            return
+
         # FIN
         if headerParams[1] == 8:
+            # time.sleep(0.2)  # test timera
             self.send(b'', SocketHeader(0, 9, headerParams[2], b''), address)
             if self.fw == None or self.fw.closed:
                 return
@@ -85,15 +90,18 @@ class Receiver:
             self.fw = None
             self.fileSize = 0
             self.msgNumStart = None
-
             return
 
+        # koniec pomenovania suboru
         if headerParams[1] == 128:
+            # time.sleep(0.2)  # test timera
             self.fw = open(self.fileName, "wb")
             self.send(b'', SocketHeader(0, 129, headerParams[2], b''), address)
             self.msgNumStart+=1
 
         if headerParams[1] == 1:
+            time.sleep(0.2) #test timera
+
             self.fileSize += headerParams[0] - HEADERSIZE
 
             if not checkChecksum(msg):
@@ -104,15 +112,17 @@ class Receiver:
 
 
 
+
             if self.fw == None:
                 if self.msgNumStart == None:
                     self.fileName = ""
                     self.msgNumStart = headerParams[2]
                     print("[SERVER] *Receiving file*")
 
-                self.lastFragN = headerParams[2]
+
 
                 self.fileName+=msg[HEADERSIZE:].decode(FORMAT)
+                self.lastFragN = headerParams[2]
                 self.send(b'', SocketHeader(0, 1, headerParams[2], b''), address)
                 print(f"    Cislo fragmentu: {headerParams[2] - self.msgNumStart}, Velkost fragmentu: {headerParams[0] - HEADERSIZE}B\n")
                 return
@@ -123,6 +133,7 @@ class Receiver:
                 self.fw.write(msg[HEADERSIZE:])
                 self.lastFragN = headerParams[2]
 
+            self.lastFragN = headerParams[2]
             self.send(b'', SocketHeader(0, 1,headerParams[2], b''), address)
 
     def send(self, data, header, address):
