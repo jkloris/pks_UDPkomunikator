@@ -52,13 +52,3 @@ def createError(msg):
     data = data[:r-1] + b'00' + data[r:]
     return data
 
-#TODO
-# -timeout cez posielanie suboru nema bezat, ok
-# -velkosť správ súboru, Ok
-# -všetky správy majú frag num, ok
-# -fragmentácia aj mena súboru, ok
-# -posielanie txt sprav, ok
-# -NACK vypisuje nespravne msg num, ok
-# -kontrola timerov sprav, ok
-# -server moznost kam si ulozi subor, ok
-# -timer switch a disonnect vypisuju segment num 0

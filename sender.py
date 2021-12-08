@@ -80,11 +80,14 @@ class Sender:
 
     def loop(self):
         while self.CONNECTED:
-            msg, address = self.client.recvfrom(BUFFSIZE)
 
             if self.timers["msg"]:
                 self.timers["msg"].kill()
                 self.timers["msg"] = None
+            try:
+                msg, address = self.client.recvfrom(BUFFSIZE)
+            except:
+                break
 
             self.handleMsg(msg, address)
 
@@ -92,6 +95,12 @@ class Sender:
     def handleMsg(self, msg, address):
         headerParams = translateHeader(msg[:HEADERSIZE])
         print(f"[Klient] Msg from {address}:  [Segment Size: {headerParams[0]}B, Flag: {headerParams[1]}, Segment num: {headerParams[2]}]")
+
+        if self.timers["msg"]:
+            self.timers["msg"].kill()
+            # self.timers["msg"].thread.join()
+            self.timers["msg"] = None
+
 
         # ak je server odpojeny, tak sa nesnazi spracovat spravy
         if not self.CONNECTED:
@@ -112,7 +121,8 @@ class Sender:
             if self.timers["switch"]:
                 self.timers["switch"].kill()
                 self.timers["switch"] = None
-            self.send(b'', SocketHeader(0, 33, self.msgNum, b''))
+
+            self.send(b'', SocketHeader(0, 33, headerParams[2]+1, b''))
             self.msgNum+=1
             from socketComunicator import closeClientOpenServer
             closeClientOpenServer(self)
@@ -123,7 +133,7 @@ class Sender:
             if self.timers["end"]:
                 self.timers["end"].kill()
                 self.timers["end"] = None
-            self.send(b'', SocketHeader(0, 65, self.msgNum, b''))
+            self.send(b'', SocketHeader(0, 65,  headerParams[2]+1, b''))
             self.msgNum+=1
             from socketComunicator import disconnectClient
             disconnectClient(self)
@@ -136,8 +146,8 @@ class Sender:
 
         # FIN + ACK
         if headerParams[1] == 9:
-            # if self.timers["msg"]:
-            #     self.timers["msg"].kill()
+            if self.timers["msg"]:
+                self.timers["msg"].kill()
             self.timers["alive"].refreshTime()
             self.timers["refresh"].unpause()
             self.lastAck = headerParams[2]
@@ -155,6 +165,13 @@ class Sender:
             self.msgNum+=1
             self.fragNum = 0
             return
+
+        if self.timers["msg"]:
+            self.timers["msg"].kill()
+            # self.timers["msg"].thread.join()
+            self.timers["msg"] = None
+
+
 
         # ACK file
         if headerParams[1] == 1 and self.fragments["file"] != None:
@@ -201,15 +218,11 @@ class Sender:
     def start3WayHandshake(self):
         if not self.send(b'', SocketHeader(0, 4, 0, b'')):
             return False
-        self.timers["msg"] = TimerMsg(self, 4, b'', 0)
 
         try:
             msg, address = self.client.recvfrom(BUFFSIZE)
         except:
             return False
-        self.timers["msg"].kill()
-        self.timers["msg"].thread.join()
-        self.timers["msg"] = None
 
         headerParams = translateHeader(msg[:HEADERSIZE])
         print(f"[Klient] Msg from {address}:  [Segment Size: {headerParams[0]}B, Flag: {headerParams[1]}, Segment num: {headerParams[2]}]")

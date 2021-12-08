@@ -87,7 +87,7 @@ class TimerAlive(TimerTemp):
 # @param msg : sprava
 # @param num : poradove cislo spravy
 class TimerMsg(TimerTemp):
-    def __init__(self, sender, flag, msg, num, delay=0.1):
+    def __init__(self, sender, flag, msg, num, delay=0.5): #TODO zmenit na 0.1
         self.msg = msg
         self.num = int(num)
         self.sender = sender
@@ -100,7 +100,7 @@ class TimerMsg(TimerTemp):
         # print("TimerMsg action")
         if self.running:
             self.sender.sendMsgAgain(self.msg, self.flag, self.num)
-            print(f"[TimerMsg] sending msg (num:{self.num}, flag:{self.flag})")
+            # print(f"[TimerMsg] sending msg (num:{self.num}, flag:{self.flag})")
         # self.kill()
 
 

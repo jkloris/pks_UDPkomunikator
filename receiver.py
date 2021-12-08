@@ -3,7 +3,7 @@ import time
 import os
 from socketHeader import *
 
-BUFFSIZE  = 1472
+BUFFSIZE  = 1472*10
 FORMAT = 'utf-8'
 
 # funcionalita servera

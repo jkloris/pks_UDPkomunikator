@@ -15,7 +15,7 @@ BUFFSIZE  = 1472
 
 # FILENAME = "pic2.png"
 # FILEPATH = "../blbosti/" + FILENAME
-ROLE = None
+# ROLE = None
 
 # vypise subory v priecinku @param path
 def listFilesInDir(path):
@@ -107,7 +107,7 @@ def restart(x):
                     print(f"[PRIKAZ] Zadaj velkost fragmentu (1 - {BUFFSIZE - 1 - HEADERSIZE})")
                     try:
                         fragsize = int(input())
-                        fragsize = fragsize if fragsize > 0 and fragsize < BUFFSIZE else BUFFSIZE - 1 - HEADERSIZE
+                        fragsize = fragsize if fragsize > 0 and fragsize < BUFFSIZE - HEADERSIZE else BUFFSIZE - 1 - HEADERSIZE
                         break
                     except:
                         print("[ERROR] *Invalid Input*")
@@ -131,7 +131,7 @@ def restart(x):
                     print(f"[PRIKAZ] Zadaj velkost fragmentu (1 - {BUFFSIZE - 1 - HEADERSIZE})")
                     try:
                         fragsize = int(input())
-                        fragsize = fragsize if fragsize > 0 and fragsize < BUFFSIZE else BUFFSIZE - 1 - HEADERSIZE
+                        fragsize = fragsize if fragsize > 0 and fragsize < BUFFSIZE - HEADERSIZE else BUFFSIZE - 1 - HEADERSIZE
                         break
                     except:
                         print("[ERROR] *Invalid Input*")
@@ -147,6 +147,7 @@ def restart(x):
                 filename = listFilesInDir(filepath)
                 filepath = filepath+"/"+filename
 
+                print(fragsize)
                 fileThread = threading.Thread(target=ROLE.startSendingFile, args=(filename, filepath, fragsize, 1))
                 fileThread.start()
                 fileThread.join()
