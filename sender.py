@@ -176,17 +176,23 @@ class Sender:
         # ACK file
         if headerParams[1] == 1 and self.fragments["file"] != None:
             self.lastAck = headerParams[2]
-            self.fragNum += 1
+
+            # self.fragNum += 1 # orginal
+
+            if self.fragments["name"] == None:
+                self.fragNum += 2 #TODO zmena doimplementacia
+            else:
+                self.fragNum +=1
 
             # posielanie fragmentov mena suboru
-            if self.fragments["name"] != None and len(self.fragments["name"]) == self.fragNum:
+            if self.fragments["name"] != None and len(self.fragments["name"]) <= self.fragNum:
                 self.send(b'', SocketHeader(0, 128, self.msgNum, b''))
-                self.timers["msg"] = TimerMsg(self, 128, b'', self.msgNum)
+                # tm
                 self.msgNum += 1
                 return
 
             # poslanie FIN spravy => koniec prenasania suboru
-            if self.fragments["name"] == None and len(self.fragments["file"]) == self.fragNum:
+            if self.fragments["name"] == None and len(self.fragments["file"]) <= self.fragNum:
                 self.fragments["file"] = None
                 self.send(b'', SocketHeader(0, 8,  self.msgNum, b''))
                 self.timers["msg"] = TimerMsg(self, 8, b'', self.msgNum)
